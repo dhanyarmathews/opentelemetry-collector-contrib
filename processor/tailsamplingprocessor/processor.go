@@ -229,6 +229,9 @@ func getSharedPolicyEvaluator(settings component.TelemetrySettings, cfg *sharedP
 	case Probabilistic:
 		pCfg := cfg.ProbabilisticCfg
 		return sampling.NewProbabilisticSampler(settings, pCfg.HashSalt, pCfg.SamplingPercentage), nil
+	case StratifiedProbabilistic:
+		pCfg := cfg.StratifiedProbabilisticCfg
+		return sampling.NewStratifiedProbabilisticSampler(settings, pCfg.HashSalt, pCfg.SamplingPercentage), nil
 	case StringAttribute:
 		safCfg := cfg.StringAttributeCfg
 		return sampling.NewStringAttributeFilter(settings, safCfg.Key, safCfg.Values, safCfg.EnabledRegexMatching, safCfg.CacheMaxSize, safCfg.InvertMatch), nil
@@ -345,6 +348,13 @@ func (tsp *tailSamplingSpanProcessor) loadPendingSamplingPolicy() {
 func (tsp *tailSamplingSpanProcessor) samplingPolicyOnTick() {
 	tsp.logger.Debug("Sampling Policy Evaluation ticked")
 
+	// [CHANGED]: To re-initialize
+	for _, p := range tsp.policies {
+		if stratified, ok := p.evaluator.(*sampling.StratifiedProbabilisticSampler); ok {
+			stratified.ResetWindow()
+		}
+	}
+
 	tsp.loadPendingSamplingPolicy()
 
 	ctx := context.Background()
@@ -353,6 +363,12 @@ func (tsp *tailSamplingSpanProcessor) samplingPolicyOnTick() {
 
 	batch, _ := tsp.decisionBatcher.CloseCurrentAndTakeFirstBatch()
 	batchLen := len(batch)
+
+	traceIDs := make([]string, 0, len(batch))
+	for _, id := range batch {
+		traceIDs = append(traceIDs, id.String())
+	}
+	tsp.logger.Debug("[CHECK_FOR_DEBUG]:Trace IDs in batch", zap.Int("trace_count", len(traceIDs)), zap.Strings("trace_ids", traceIDs))
 
 	for _, id := range batch {
 		d, ok := tsp.idToTrace.Load(id)
@@ -484,7 +500,7 @@ func (tsp *tailSamplingSpanProcessor) ConsumeTraces(_ context.Context, td ptrace
 	return nil
 }
 
-func (*tailSamplingSpanProcessor) groupSpansByTraceKey(resourceSpans ptrace.ResourceSpans) map[pcommon.TraceID][]spanAndScope {
+func (tsp *tailSamplingSpanProcessor) groupSpansByTraceKey(resourceSpans ptrace.ResourceSpans) map[pcommon.TraceID][]spanAndScope {
 	idToSpans := make(map[pcommon.TraceID][]spanAndScope)
 	ilss := resourceSpans.ScopeSpans()
 	for j := 0; j < ilss.Len(); j++ {
@@ -596,7 +612,7 @@ func (tsp *tailSamplingSpanProcessor) processTraces(resourceSpans ptrace.Resourc
 	tsp.telemetry.ProcessorTailSamplingNewTraceIDReceived.Add(tsp.ctx, newTraceIDs)
 }
 
-func (*tailSamplingSpanProcessor) Capabilities() consumer.Capabilities {
+func (tsp *tailSamplingSpanProcessor) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
 
