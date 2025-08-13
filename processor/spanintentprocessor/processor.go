@@ -32,7 +32,9 @@ type spanIntentProcessor struct {
 	nextConsumer consumer.Traces
 
 	mu              sync.Mutex
+	tdigestMutex    sync.Mutex
 	traceDataBuffer map[pcommon.TraceID]*traceData
+	tdigestMap      map[string]*utility.TDigest
 	sampledTraces   cache.Cache[bool]
 	unsampledTraces cache.Cache[bool]
 	stopCh          chan struct{}
@@ -141,6 +143,7 @@ func newSpanIntentProcessor(
 		cfg:             cfg,
 		nextConsumer:    nextConsumer,
 		traceDataBuffer: make(map[pcommon.TraceID]*traceData),
+		tdigestMap:      make(map[string]*utility.TDigest),
 		sampledTraces:   sampledCache,
 		unsampledTraces: unsampledCache,
 		stopCh:          make(chan struct{}),
@@ -188,6 +191,15 @@ func (p *spanIntentProcessor) runTickLoop() {
 
 func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	resourceSpans := td.ResourceSpans()
+
+	// Initialize sets for normal, degraded, and failed traces
+	normalSet := make(map[pcommon.TraceID]struct{})
+	degradedSet := make(map[pcommon.TraceID]struct{})
+	failedSet := make(map[pcommon.TraceID]struct{})
+
+	// tracesToProcess := make(map[pcommon.TraceID]*traceData) // To hold traces that are not in sampled or unsampled cache
+
+	// Loop through resource spans and process traces
 	for i := 0; i < resourceSpans.Len(); i++ {
 		rs := resourceSpans.At(i)
 		resourceAttrs := rs.Resource().Attributes()
@@ -201,9 +213,27 @@ func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Trace
 
 				p.mSpansReceived.Add(ctx, 1)
 
+				// Lock and check if trace ID exists in sampled/unsampled caches
 				p.mu.Lock()
+				// If trace is not in the cache, initialize the trace entry
+				if sampled, ok := p.sampledTraces.Get(traceID); ok && sampled {
+					p.mSampledCacheHits.Add(context.Background(), 1)
+					p.mu.Unlock()
+					continue
+				} else {
+					p.mSampledCacheMisses.Add(context.Background(), 1)
+				}
+
+				if unsampled, ok := p.unsampledTraces.Get(traceID); ok && unsampled {
+					p.mUnsampledCacheHits.Add(context.Background(), 1)
+					p.mu.Unlock()
+					continue
+				} else {
+					p.mUnsampledCacheMisses.Add(context.Background(), 1)
+				}
 				data, exists := p.traceDataBuffer[traceID]
 				if !exists {
+					// If trace doesn't exist, create a new entry
 					p.mNewTraceIDReceived.Add(ctx, 1)
 					attrCopy := pcommon.NewMap()
 					resourceAttrs.CopyTo(attrCopy)
@@ -213,14 +243,85 @@ func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Trace
 					}
 					p.traceDataBuffer[traceID] = data
 				}
+				// Add the span to the trace data
 				data.spans = append(data.spans, span)
 				p.mu.Unlock()
+
+				serviceName := "unknown"
+				if attr, ok := data.resourceAttrs.Get("service.name"); ok && attr.Type() == pcommon.ValueTypeStr {
+					serviceName = attr.Str()
+				}
+				opName := span.Name()
+				key := fmt.Sprintf("%s_%s", serviceName, opName)
+
+				p.tdigestMutex.Lock()
+				// Check if there's already a TDigest for this serviceName + opName pair
+				tdigest, exists := p.tdigestMap[key]
+				if !exists {
+					tdigest = utility.NewTDigest(100) // Create a new TDigest if it doesn't exist for this pair
+					p.tdigestMap[key] = tdigest
+				}
+
+				// Add the latency of the current span to the TDigest for the service + operation pair
+				latencyMs := float64(span.EndTimestamp()-span.StartTimestamp()) / 1e6
+				tdigest.Add(latencyMs, 1)
+
+				// Classify the latency
+				if latencyMs < tdigest.Quantile(0.25) {
+					normalSet[traceID] = struct{}{}
+				} else if latencyMs >= tdigest.Quantile(0.90) {
+					degradedSet[traceID] = struct{}{}
+				} else {
+					failedSet[traceID] = struct{}{}
+				}
+				p.tdigestMutex.Unlock()
+
 			}
 		}
 	}
+
+	// Call processTracesForSampling to decide which traces to sample
+	//p.processTracesForSampling(normalSet, degradedSet, failedSet)
+
 	return td, nil
 }
 
+/*
+	func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+		resourceSpans := td.ResourceSpans()
+		for i := 0; i < resourceSpans.Len(); i++ {
+			rs := resourceSpans.At(i)
+			resourceAttrs := rs.Resource().Attributes()
+
+			ils := rs.ScopeSpans()
+			for j := 0; j < ils.Len(); j++ {
+				spans := ils.At(j).Spans()
+				for k := 0; k < spans.Len(); k++ {
+					span := spans.At(k)
+					traceID := span.TraceID()
+
+					p.mSpansReceived.Add(ctx, 1)
+
+					p.mu.Lock()
+					data, exists := p.traceDataBuffer[traceID]
+					if !exists {
+						p.mNewTraceIDReceived.Add(ctx, 1)
+						attrCopy := pcommon.NewMap()
+						resourceAttrs.CopyTo(attrCopy)
+						data = &traceData{
+							resourceAttrs: attrCopy,
+							spans:         []ptrace.Span{},
+						}
+						p.traceDataBuffer[traceID] = data
+					}
+					data.spans = append(data.spans, span)
+					p.mu.Unlock()
+				}
+			}
+		}
+		return td, nil
+	}
+*/
 func (p *spanIntentProcessor) processBufferedSpans() {
 	start := time.Now()
 	defer func() {
@@ -458,7 +559,6 @@ func (p *spanIntentProcessor) forwardTrace(traceID pcommon.TraceID, spans []ptra
 	rs := td.ResourceSpans().AppendEmpty()
 	//rs.Resource().Attributes().InitFromMap(map[string]pcommon.Value{})
 	_ = rs.Resource().Attributes().FromRaw(map[string]interface{}{})
-
 
 	ilss := rs.ScopeSpans().AppendEmpty()
 	spansSlice := ilss.Spans()
