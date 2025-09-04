@@ -1,0 +1,105 @@
+package metadata
+
+import (
+	"context"
+	"sync"
+
+	"go.opentelemetry.io/otel/metric"
+	//"go.opentelemetry.io/otel/metric/instrument"
+
+	"go.opentelemetry.io/collector/component"
+)
+
+type TelemetryBuilder struct {
+	meter metric.Meter
+
+	ProcessorSpanintentSpansReceived           instrument.Int64Counter
+	ProcessorSpanintentNewTraceIDReceived      instrument.Int64Counter
+	ProcessorSpanintentTracesProcessed         instrument.Int64Counter
+	ProcessorSpanintentTracesClassifiedTotal   instrument.Int64Counter
+	ProcessorSpanintentTracesSampled           instrument.Int64Counter
+	ProcessorSpanintentTracesUnsampled         instrument.Int64Counter
+	ProcessorSpanintentProcessingDuration      instrument.Int64Histogram
+	ProcessorSpanintentSamplingDecisionLatency instrument.Int64Histogram
+	ProcessorSpanintentSampledCacheHits        instrument.Int64Counter
+	ProcessorSpanintentSampledCacheMisses      instrument.Int64Counter
+	ProcessorSpanintentUnsampledCacheHits      instrument.Int64Counter
+	ProcessorSpanintentUnsampledCacheMisses    instrument.Int64Counter
+	ProcessorSpanintentTraceBufferSize         instrument.Int64ObservableGauge
+	ProcessorSpanintentErrorsTotal             instrument.Int64Counter
+
+	traceBufferSizeValue int64
+	mu                   sync.Mutex
+}
+
+// NewTelemetryBuilder initializes metric instruments with OTel API
+func NewTelemetryBuilder(set component.TelemetrySettings, id component.ID) (*TelemetryBuilder, error) {
+	meter := set.MeterProvider.Meter(id.String())
+
+	tb := &TelemetryBuilder{
+		meter: meter,
+	}
+
+	var err error
+
+	if tb.ProcessorSpanintentSpansReceived, err = meter.NewInt64Counter("processor_spanintent_spans_received"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentNewTraceIDReceived, err = meter.Int64Counter("processor_spanintent_new_trace_id_received"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesProcessed, err = meter.Int64Counter("processor_spanintent_traces_processed"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesClassifiedTotal, err = meter.Int64Counter("processor_spanintent_traces_classified_total"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesSampled, err = meter.Int64Counter("processor_spanintent_traces_sampled"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesUnsampled, err = meter.Int64Counter("processor_spanintent_traces_unsampled"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentProcessingDuration, err = meter.Int64Histogram("processor_spanintent_processing_duration"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentSamplingDecisionLatency, err = meter.Int64Histogram("processor_spanintent_sampling_decision_latency"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentSampledCacheHits, err = meter.Int64Counter("processor_spanintent_sampled_cache_hits"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentSampledCacheMisses, err = meter.Int64Counter("processor_spanintent_sampled_cache_misses"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentUnsampledCacheHits, err = meter.Int64Counter("processor_spanintent_unsampled_cache_hits"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentUnsampledCacheMisses, err = meter.Int64Counter("processor_spanintent_unsampled_cache_misses"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentErrorsTotal, err = meter.Int64Counter("processor_spanintent_errors_total"); err != nil {
+		return nil, err
+	}
+
+	if tb.ProcessorSpanintentTraceBufferSize, err = meter.Int64ObservableGauge(
+		"processor_spanintent_trace_buffer_size",
+		instrument.WithInt64Callback(func(ctx context.Context, obs instrument.Int64Observer) error {
+			tb.mu.Lock()
+			defer tb.mu.Unlock()
+			obs.Observe(tb.traceBufferSizeValue)
+			return nil
+		}),
+	); err != nil {
+		return nil, err
+	}
+
+	return tb, nil
+}
+
+// SetTraceBufferSize sets the latest value to be observed in the gauge.
+func (tb *TelemetryBuilder) SetTraceBufferSize(size int64) {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	tb.traceBufferSizeValue = size
+}

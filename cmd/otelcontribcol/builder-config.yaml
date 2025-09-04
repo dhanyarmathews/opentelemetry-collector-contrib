@@ -142,6 +142,7 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.134.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.134.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/datadogsemanticsprocessor v0.134.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanintentprocessor v0.1.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/nopreceiver v0.134.0
@@ -277,3 +278,5 @@ providers:
 # file before passing it to OCB, to ensure that local versions are used for all
 # Contrib modules.
 replaces:
+  - github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanintentprocessor => ../../processor/spanintentprocessor
+  - github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor => ../../processor/tailsamplingprocessor
