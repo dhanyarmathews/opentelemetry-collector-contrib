@@ -4,6 +4,7 @@
 package sampling
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
@@ -12,8 +13,6 @@ import (
 	"go.opentelemetry.io/collector/featuregate"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/pkg/samplingpolicy"
 )
 
 func TestBooleanTagFilter(t *testing.T) {
@@ -25,30 +24,30 @@ func TestBooleanTagFilter(t *testing.T) {
 
 	cases := []struct {
 		Desc     string
-		Trace    *samplingpolicy.TraceData
-		Decision samplingpolicy.Decision
+		Trace    *TraceData
+		Decision Decision
 	}{
 		{
 			Desc:     "non-matching span attribute",
 			Trace:    newTraceBoolAttrs(empty, "non_matching", true),
-			Decision: samplingpolicy.NotSampled,
+			Decision: NotSampled,
 		},
 		{
 			Desc:     "span attribute with unwanted boolean value",
 			Trace:    newTraceBoolAttrs(empty, "example", false),
-			Decision: samplingpolicy.NotSampled,
+			Decision: NotSampled,
 		},
 		{
 			Desc:     "span attribute with wanted boolean value",
 			Trace:    newTraceBoolAttrs(empty, "example", true),
-			Decision: samplingpolicy.Sampled,
+			Decision: Sampled,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.Desc, func(t *testing.T) {
 			u, _ := uuid.NewRandom()
-			decision, err := filter.Evaluate(t.Context(), pcommon.TraceID(u), c.Trace)
+			decision, err := filter.Evaluate(context.Background(), pcommon.TraceID(u), c.Trace)
 			assert.NoError(t, err)
 			assert.Equal(t, decision, c.Decision)
 		})
@@ -64,35 +63,35 @@ func TestBooleanTagFilterInverted(t *testing.T) {
 
 	cases := []struct {
 		Desc                  string
-		Trace                 *samplingpolicy.TraceData
-		Decision              samplingpolicy.Decision
+		Trace                 *TraceData
+		Decision              Decision
 		DisableInvertDecision bool
 	}{
 		{
 			Desc:     "non-matching span attribute",
 			Trace:    newTraceBoolAttrs(empty, "non_matching", true),
-			Decision: samplingpolicy.InvertSampled,
+			Decision: InvertSampled,
 		},
 		{
 			Desc:     "span attribute with non matching boolean value",
 			Trace:    newTraceBoolAttrs(empty, "example", false),
-			Decision: samplingpolicy.InvertSampled,
+			Decision: InvertSampled,
 		},
 		{
 			Desc:     "span attribute with matching boolean value",
 			Trace:    newTraceBoolAttrs(empty, "example", true),
-			Decision: samplingpolicy.InvertNotSampled,
+			Decision: InvertNotSampled,
 		},
 		{
 			Desc:                  "span attribute with non matching boolean value with DisableInvertDecision",
 			Trace:                 newTraceBoolAttrs(empty, "example", false),
-			Decision:              samplingpolicy.Sampled,
+			Decision:              Sampled,
 			DisableInvertDecision: true,
 		},
 		{
 			Desc:                  "span attribute with matching boolean value with DisableInvertDecision",
 			Trace:                 newTraceBoolAttrs(empty, "example", true),
-			Decision:              samplingpolicy.NotSampled,
+			Decision:              NotSampled,
 			DisableInvertDecision: true,
 		},
 	}
@@ -108,14 +107,14 @@ func TestBooleanTagFilterInverted(t *testing.T) {
 				}()
 			}
 			u, _ := uuid.NewRandom()
-			decision, err := filter.Evaluate(t.Context(), pcommon.TraceID(u), c.Trace)
+			decision, err := filter.Evaluate(context.Background(), pcommon.TraceID(u), c.Trace)
 			assert.NoError(t, err)
 			assert.Equal(t, decision, c.Decision)
 		})
 	}
 }
 
-func newTraceBoolAttrs(nodeAttrs map[string]any, spanAttrKey string, spanAttrValue bool) *samplingpolicy.TraceData {
+func newTraceBoolAttrs(nodeAttrs map[string]any, spanAttrKey string, spanAttrValue bool) *TraceData {
 	traces := ptrace.NewTraces()
 	rs := traces.ResourceSpans().AppendEmpty()
 	//nolint:errcheck
@@ -125,7 +124,7 @@ func newTraceBoolAttrs(nodeAttrs map[string]any, spanAttrKey string, spanAttrVal
 	span.SetTraceID([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16})
 	span.SetSpanID([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	span.Attributes().PutBool(spanAttrKey, spanAttrValue)
-	return &samplingpolicy.TraceData{
+	return &TraceData{
 		ReceivedBatches: traces,
 	}
 }

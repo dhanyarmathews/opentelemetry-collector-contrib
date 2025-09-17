@@ -4,6 +4,7 @@
 package tailsamplingprocessor
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 	"go.opentelemetry.io/collector/processor/processortest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/internal/metadata"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/pkg/samplingpolicy"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/internal/sampling"
 )
 
 func BenchmarkSampling(b *testing.B) {
@@ -25,17 +26,17 @@ func BenchmarkSampling(b *testing.B) {
 		ExpectedNewTracesPerSec: 64,
 		PolicyCfgs:              testPolicy,
 	}
-	sp, _ := newTracesProcessor(b.Context(), processortest.NewNopSettings(metadata.Type), consumertest.NewNop(), cfg)
+	sp, _ := newTracesProcessor(context.Background(), processortest.NewNopSettings(metadata.Type), consumertest.NewNop(), cfg)
 	tsp := sp.(*tailSamplingSpanProcessor)
-	require.NoError(b, tsp.Start(b.Context(), componenttest.NewNopHost()))
+	require.NoError(b, tsp.Start(context.Background(), componenttest.NewNopHost()))
 	defer func() {
-		require.NoError(b, tsp.Shutdown(b.Context()))
+		require.NoError(b, tsp.Shutdown(context.Background()))
 	}()
 	metrics := &policyMetrics{}
-	sampleBatches := make([]*samplingpolicy.TraceData, 0, len(batches))
+	sampleBatches := make([]*sampling.TraceData, 0, len(batches))
 
 	for i := 0; i < len(batches); i++ {
-		sampleBatches = append(sampleBatches, &samplingpolicy.TraceData{
+		sampleBatches = append(sampleBatches, &sampling.TraceData{
 			ArrivalTime: time.Now(),
 			// SpanCount:       spanCount,
 			ReceivedBatches: ptrace.NewTraces(),

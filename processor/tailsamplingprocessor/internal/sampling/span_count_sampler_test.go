@@ -4,6 +4,7 @@
 package sampling
 
 import (
+	"context"
 	"sync/atomic"
 	"testing"
 
@@ -11,8 +12,6 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/pkg/samplingpolicy"
 )
 
 func TestEvaluate_OnlyMinSpans(t *testing.T) {
@@ -23,55 +22,55 @@ func TestEvaluate_OnlyMinSpans(t *testing.T) {
 	cases := []struct {
 		Desc        string
 		NumberSpans []int32
-		Decision    samplingpolicy.Decision
+		Decision    Decision
 	}{
 		{
 			"Spans less than the minSpans, in one single batch",
 			[]int32{
 				1,
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"Same number of spans as the minSpans, in one single batch",
 			[]int32{
 				3,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Spans greater than the minSpans, in one single batch",
 			[]int32{
 				4,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Spans less than the minSpans, across multiple batches",
 			[]int32{
 				1, 1,
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"Same number of spans as the minSpans, across multiple batches",
 			[]int32{
 				1, 2, 1,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Spans greater than the minSpans, across multiple batches",
 			[]int32{
 				1, 2, 3,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.Desc, func(t *testing.T) {
-			decision, err := filter.Evaluate(t.Context(), traceID, newTraceWithMultipleSpans(c.NumberSpans))
+			decision, err := filter.Evaluate(context.Background(), traceID, newTraceWithMultipleSpans(c.NumberSpans))
 
 			assert.NoError(t, err)
 			assert.Equal(t, decision, c.Decision)
@@ -87,55 +86,55 @@ func TestEvaluate_OnlyMaxSpans(t *testing.T) {
 	cases := []struct {
 		Desc        string
 		NumberSpans []int32
-		Decision    samplingpolicy.Decision
+		Decision    Decision
 	}{
 		{
 			"Spans greater than the maxSpans, in one single batch",
 			[]int32{
 				21,
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"Same number of spans as the maxSpans, in one single batch",
 			[]int32{
 				20,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Spans less than the maxSpans, in one single batch",
 			[]int32{
 				19,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Spans gather than the maxSpans, across multiple batches",
 			[]int32{
 				1, 2, 3, 4, 5, 6,
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"Same number of spans as the maxSpans, across multiple batches",
 			[]int32{
 				1, 2, 3, 4, 5, 5,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Spans less than the maxSpans, across multiple batches",
 			[]int32{
 				1, 2, 3, 4, 5,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.Desc, func(t *testing.T) {
-			decision, err := filter.Evaluate(t.Context(), traceID, newTraceWithMultipleSpans(c.NumberSpans))
+			decision, err := filter.Evaluate(context.Background(), traceID, newTraceWithMultipleSpans(c.NumberSpans))
 
 			assert.NoError(t, err)
 			assert.Equal(t, decision, c.Decision)
@@ -151,83 +150,83 @@ func TestEvaluate_RangeOfSpans(t *testing.T) {
 	cases := []struct {
 		Desc        string
 		NumberSpans []int32
-		Decision    samplingpolicy.Decision
+		Decision    Decision
 	}{
 		{
 			"Spans less than the minSpans, in one single batch",
 			[]int32{
 				1,
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"Spans greater than the maxSpans, in one single batch",
 			[]int32{
 				21,
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"Spans range of minSpan and maxSpans, in one single batch",
 			[]int32{
 				4,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Spans less than the minSpans, across multiple batches",
 			[]int32{
 				1, 1,
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"Spans greater than the maxSpans, across multiple batches",
 			[]int32{
 				1, 2, 3, 4, 5, 6,
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"Spans range of minSpan and maxSpans, across multiple batches",
 			[]int32{
 				1, 2, 1,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Same number of spans as the minSpans, in one single batch",
 			[]int32{
 				3,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Same number of spans as the maxSpans, in one single batch",
 			[]int32{
 				20,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Same number of spans as the minSpans, across multiple batches",
 			[]int32{
 				1, 2,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"Same number of spans as the maxSpans, across multiple batches",
 			[]int32{
 				1, 2, 3, 4, 5, 5,
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.Desc, func(t *testing.T) {
-			decision, err := filter.Evaluate(t.Context(), traceID, newTraceWithMultipleSpans(c.NumberSpans))
+			decision, err := filter.Evaluate(context.Background(), traceID, newTraceWithMultipleSpans(c.NumberSpans))
 
 			assert.NoError(t, err)
 			assert.Equal(t, decision, c.Decision)
@@ -235,7 +234,7 @@ func TestEvaluate_RangeOfSpans(t *testing.T) {
 	}
 }
 
-func newTraceWithMultipleSpans(numberSpans []int32) *samplingpolicy.TraceData {
+func newTraceWithMultipleSpans(numberSpans []int32) *TraceData {
 	totalNumberSpans := int32(0)
 
 	// For each resource, going to create the number of spans defined in the array
@@ -255,7 +254,7 @@ func newTraceWithMultipleSpans(numberSpans []int32) *samplingpolicy.TraceData {
 
 	traceSpanCount := &atomic.Int64{}
 	traceSpanCount.Store(int64(totalNumberSpans))
-	return &samplingpolicy.TraceData{
+	return &TraceData{
 		ReceivedBatches: traces,
 		SpanCount:       traceSpanCount,
 	}

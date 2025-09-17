@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
-func TestProbabilisticSampling(t *testing.T) {
+func TestStratifiedProbabilisticSampling(t *testing.T) {
 	tests := []struct {
 		name                       string
 		samplingPercentage         float64
@@ -68,13 +68,13 @@ func TestProbabilisticSampling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			traceCount := 100_000
 
-			probabilisticSampler := NewProbabilisticSampler(componenttest.NewNopTelemetrySettings(), tt.hashSalt, tt.samplingPercentage)
+			sratifiedProbabilisticSampler := NewStratifiedProbabilisticSampler(componenttest.NewNopTelemetrySettings(), tt.hashSalt, tt.samplingPercentage)
 
 			sampled := 0
-			for _, traceID := range genRandomTraceIDs(traceCount) {
+			for _, traceID := range genStratifiedRandomTraceIDs(traceCount) {
 				trace := newTraceStringAttrs(nil, "example", "value")
 
-				decision, err := probabilisticSampler.Evaluate(context.Background(), traceID, trace)
+				decision, err := sratifiedProbabilisticSampler.Evaluate(context.Background(), traceID, trace)
 				assert.NoError(t, err)
 
 				if decision == Sampled {
@@ -90,7 +90,7 @@ func TestProbabilisticSampling(t *testing.T) {
 	}
 }
 
-func genRandomTraceIDs(num int) (ids []pcommon.TraceID) {
+func genStratifiedRandomTraceIDs(num int) (ids []pcommon.TraceID) {
 	// NOTE: using a fixed seed is intentional here,
 	// as otherwise the delta in the tests above will
 	// be unpredictable.

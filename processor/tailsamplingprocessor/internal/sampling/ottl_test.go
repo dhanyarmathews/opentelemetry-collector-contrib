@@ -4,6 +4,7 @@
 package sampling
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/pkg/samplingpolicy"
 )
 
 func TestEvaluate_OTTL(t *testing.T) {
@@ -24,7 +24,7 @@ func TestEvaluate_OTTL(t *testing.T) {
 		SpanEventConditions []string
 		Spans               []spanWithAttributes
 		WantErr             bool
-		Decision            samplingpolicy.Decision
+		Decision            Decision
 	}{
 		{
 			// policy
@@ -33,7 +33,7 @@ func TestEvaluate_OTTL(t *testing.T) {
 			[]string{},
 			[]spanWithAttributes{{SpanAttributes: map[string]string{"attr_k_1": "attr_v_1"}}},
 			true,
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"OTTL conditions match specific span attributes 1",
@@ -41,7 +41,7 @@ func TestEvaluate_OTTL(t *testing.T) {
 			[]string{},
 			[]spanWithAttributes{{SpanAttributes: map[string]string{"attr_k_1": "attr_v_1"}}},
 			false,
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"OTTL conditions match specific span attributes 2",
@@ -49,7 +49,7 @@ func TestEvaluate_OTTL(t *testing.T) {
 			[]string{},
 			[]spanWithAttributes{{SpanAttributes: map[string]string{"attr_k_1": "attr_v_1"}}},
 			false,
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"OTTL conditions inverse match(!=) span attributes 2",
@@ -57,7 +57,7 @@ func TestEvaluate_OTTL(t *testing.T) {
 			[]string{},
 			[]spanWithAttributes{{SpanAttributes: map[string]string{"attr_k_1": "attr_v_2"}}},
 			false,
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"OTTL conditions match specific span event attributes",
@@ -65,7 +65,7 @@ func TestEvaluate_OTTL(t *testing.T) {
 			[]string{"attributes[\"event_attr_k_1\"] == \"event_attr_v_1\""},
 			[]spanWithAttributes{{SpanEventAttributes: map[string]string{"event_attr_k_1": "event_attr_v_1"}}},
 			false,
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"OTTL conditions match specific span event name",
@@ -73,7 +73,7 @@ func TestEvaluate_OTTL(t *testing.T) {
 			[]string{"name != \"incorrect event name\""},
 			[]spanWithAttributes{{SpanEventAttributes: nil}},
 			false,
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"OTTL conditions not matched",
@@ -81,7 +81,7 @@ func TestEvaluate_OTTL(t *testing.T) {
 			[]string{"attributes[\"event_attr_k_1\"] == \"event_attr_v_1\""},
 			[]spanWithAttributes{},
 			false,
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 	}
 
@@ -91,7 +91,7 @@ func TestEvaluate_OTTL(t *testing.T) {
 			assert.Equal(t, err != nil, c.WantErr)
 
 			if err == nil {
-				decision, err := filter.Evaluate(t.Context(), traceID, newTraceWithSpansAttributes(c.Spans))
+				decision, err := filter.Evaluate(context.Background(), traceID, newTraceWithSpansAttributes(c.Spans))
 				assert.Equal(t, err != nil, c.WantErr)
 				assert.Equal(t, decision, c.Decision)
 			}
@@ -104,7 +104,7 @@ type spanWithAttributes struct {
 	SpanEventAttributes map[string]string
 }
 
-func newTraceWithSpansAttributes(spans []spanWithAttributes) *samplingpolicy.TraceData {
+func newTraceWithSpansAttributes(spans []spanWithAttributes) *TraceData {
 	traces := ptrace.NewTraces()
 	rs := traces.ResourceSpans().AppendEmpty()
 	ils := rs.ScopeSpans().AppendEmpty()
@@ -123,7 +123,7 @@ func newTraceWithSpansAttributes(spans []spanWithAttributes) *samplingpolicy.Tra
 		}
 	}
 
-	return &samplingpolicy.TraceData{
+	return &TraceData{
 		ReceivedBatches: traces,
 	}
 }

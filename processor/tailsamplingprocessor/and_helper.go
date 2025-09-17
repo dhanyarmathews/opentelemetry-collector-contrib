@@ -7,11 +7,10 @@ import (
 	"go.opentelemetry.io/collector/component"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/internal/sampling"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/pkg/samplingpolicy"
 )
 
-func getNewAndPolicy(settings component.TelemetrySettings, config *AndCfg) (samplingpolicy.Evaluator, error) {
-	subPolicyEvaluators := make([]samplingpolicy.Evaluator, len(config.SubPolicyCfg))
+func getNewAndPolicy(settings component.TelemetrySettings, config *AndCfg) (sampling.PolicyEvaluator, error) {
+	subPolicyEvaluators := make([]sampling.PolicyEvaluator, len(config.SubPolicyCfg))
 	for i := range config.SubPolicyCfg {
 		policyCfg := &config.SubPolicyCfg[i]
 		policy, err := getAndSubPolicyEvaluator(settings, policyCfg)
@@ -24,6 +23,6 @@ func getNewAndPolicy(settings component.TelemetrySettings, config *AndCfg) (samp
 }
 
 // Return instance of and sub-policy
-func getAndSubPolicyEvaluator(settings component.TelemetrySettings, cfg *AndSubPolicyCfg) (samplingpolicy.Evaluator, error) {
+func getAndSubPolicyEvaluator(settings component.TelemetrySettings, cfg *AndSubPolicyCfg) (sampling.PolicyEvaluator, error) {
 	return getSharedPolicyEvaluator(settings, &cfg.sharedPolicyCfg)
 }

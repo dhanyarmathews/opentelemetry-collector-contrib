@@ -4,14 +4,13 @@
 package sampling
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/pkg/samplingpolicy"
 )
 
 func TestNewStatusCodeFilter_errorHandling(t *testing.T) {
@@ -29,31 +28,31 @@ func TestStatusCodeSampling(t *testing.T) {
 		Desc                  string
 		StatusCodesToFilterOn []string
 		StatusCodesPresent    []ptrace.StatusCode
-		Decision              samplingpolicy.Decision
+		Decision              Decision
 	}{
 		{
 			Desc:                  "filter on ERROR - none match",
 			StatusCodesToFilterOn: []string{"ERROR"},
 			StatusCodesPresent:    []ptrace.StatusCode{ptrace.StatusCodeOk, ptrace.StatusCodeUnset, ptrace.StatusCodeOk},
-			Decision:              samplingpolicy.NotSampled,
+			Decision:              NotSampled,
 		},
 		{
 			Desc:                  "filter on OK and ERROR - none match",
 			StatusCodesToFilterOn: []string{"OK", "ERROR"},
 			StatusCodesPresent:    []ptrace.StatusCode{ptrace.StatusCodeUnset, ptrace.StatusCodeUnset},
-			Decision:              samplingpolicy.NotSampled,
+			Decision:              NotSampled,
 		},
 		{
 			Desc:                  "filter on UNSET - matches",
 			StatusCodesToFilterOn: []string{"UNSET"},
 			StatusCodesPresent:    []ptrace.StatusCode{ptrace.StatusCodeUnset},
-			Decision:              samplingpolicy.Sampled,
+			Decision:              Sampled,
 		},
 		{
 			Desc:                  "filter on OK and UNSET - matches",
 			StatusCodesToFilterOn: []string{"OK", "UNSET"},
 			StatusCodesPresent:    []ptrace.StatusCode{ptrace.StatusCodeError, ptrace.StatusCodeOk},
-			Decision:              samplingpolicy.Sampled,
+			Decision:              Sampled,
 		},
 	}
 
@@ -70,14 +69,14 @@ func TestStatusCodeSampling(t *testing.T) {
 				span.SetSpanID([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 			}
 
-			trace := &samplingpolicy.TraceData{
+			trace := &TraceData{
 				ReceivedBatches: traces,
 			}
 
 			statusCodeFilter, err := NewStatusCodeFilter(componenttest.NewNopTelemetrySettings(), c.StatusCodesToFilterOn)
 			assert.NoError(t, err)
 
-			decision, err := statusCodeFilter.Evaluate(t.Context(), traceID, trace)
+			decision, err := statusCodeFilter.Evaluate(context.Background(), traceID, trace)
 			assert.NoError(t, err)
 			assert.Equal(t, c.Decision, decision)
 		})

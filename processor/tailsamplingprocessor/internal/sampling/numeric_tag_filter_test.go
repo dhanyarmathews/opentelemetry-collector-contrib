@@ -4,6 +4,7 @@
 package sampling
 
 import (
+	"context"
 	"math"
 	"testing"
 
@@ -14,8 +15,6 @@ import (
 	"go.opentelemetry.io/collector/featuregate"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/pkg/samplingpolicy"
 )
 
 func TestNumericTagFilter(t *testing.T) {
@@ -29,60 +28,60 @@ func TestNumericTagFilter(t *testing.T) {
 
 	cases := []struct {
 		Desc     string
-		Trace    *samplingpolicy.TraceData
-		Decision samplingpolicy.Decision
+		Trace    *TraceData
+		Decision Decision
 	}{
 		{
 			Desc:     "nonmatching span attribute",
 			Trace:    newTraceIntAttrs(empty, "non_matching", math.MinInt32),
-			Decision: samplingpolicy.NotSampled,
+			Decision: NotSampled,
 		},
 		{
 			Desc:     "span attribute at the lower limit",
 			Trace:    newTraceIntAttrs(empty, "example", math.MinInt32),
-			Decision: samplingpolicy.Sampled,
+			Decision: Sampled,
 		},
 		{
 			Desc:     "resource attribute at the lower limit",
 			Trace:    newTraceIntAttrs(map[string]any{"example": math.MinInt32}, "non_matching", math.MinInt32),
-			Decision: samplingpolicy.Sampled,
+			Decision: Sampled,
 		},
 		{
 			Desc:     "span attribute at the upper limit",
 			Trace:    newTraceIntAttrs(empty, "example", math.MaxInt32),
-			Decision: samplingpolicy.Sampled,
+			Decision: Sampled,
 		},
 		{
 			Desc:     "resource attribute at the upper limit",
 			Trace:    newTraceIntAttrs(map[string]any{"example": math.MaxInt32}, "non_matching", math.MaxInt),
-			Decision: samplingpolicy.Sampled,
+			Decision: Sampled,
 		},
 		{
 			Desc:     "span attribute below min limit",
 			Trace:    newTraceIntAttrs(empty, "example", math.MinInt32-1),
-			Decision: samplingpolicy.NotSampled,
+			Decision: NotSampled,
 		},
 		{
 			Desc:     "resource attribute below min limit",
 			Trace:    newTraceIntAttrs(map[string]any{"example": math.MinInt32 - 1}, "non_matching", math.MinInt32),
-			Decision: samplingpolicy.NotSampled,
+			Decision: NotSampled,
 		},
 		{
 			Desc:     "span attribute above max limit",
 			Trace:    newTraceIntAttrs(empty, "example", math.MaxInt32+1),
-			Decision: samplingpolicy.NotSampled,
+			Decision: NotSampled,
 		},
 		{
 			Desc:     "resource attribute above max limit",
 			Trace:    newTraceIntAttrs(map[string]any{"example": math.MaxInt32 + 1}, "non_matching", math.MaxInt32),
-			Decision: samplingpolicy.NotSampled,
+			Decision: NotSampled,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.Desc, func(t *testing.T) {
 			u, _ := uuid.NewRandom()
-			decision, err := filter.Evaluate(t.Context(), pcommon.TraceID(u), c.Trace)
+			decision, err := filter.Evaluate(context.Background(), pcommon.TraceID(u), c.Trace)
 			assert.NoError(t, err)
 			assert.Equal(t, decision, c.Decision)
 		})
@@ -100,65 +99,65 @@ func TestNumericTagFilterInverted(t *testing.T) {
 
 	cases := []struct {
 		Desc                  string
-		Trace                 *samplingpolicy.TraceData
-		Decision              samplingpolicy.Decision
+		Trace                 *TraceData
+		Decision              Decision
 		DisableInvertDecision bool
 	}{
 		{
 			Desc:     "nonmatching span attribute",
 			Trace:    newTraceIntAttrs(empty, "non_matching", math.MinInt32),
-			Decision: samplingpolicy.InvertSampled,
+			Decision: InvertSampled,
 		},
 		{
 			Desc:     "span attribute at the lower limit",
 			Trace:    newTraceIntAttrs(empty, "example", math.MinInt32),
-			Decision: samplingpolicy.InvertNotSampled,
+			Decision: InvertNotSampled,
 		},
 		{
 			Desc:     "resource attribute at the lower limit",
 			Trace:    newTraceIntAttrs(map[string]any{"example": math.MinInt32}, "non_matching", math.MinInt32),
-			Decision: samplingpolicy.InvertNotSampled,
+			Decision: InvertNotSampled,
 		},
 		{
 			Desc:     "span attribute at the upper limit",
 			Trace:    newTraceIntAttrs(empty, "example", math.MaxInt32),
-			Decision: samplingpolicy.InvertNotSampled,
+			Decision: InvertNotSampled,
 		},
 		{
 			Desc:     "resource attribute at the upper limit",
 			Trace:    newTraceIntAttrs(map[string]any{"example": math.MaxInt32}, "non_matching", math.MaxInt32),
-			Decision: samplingpolicy.InvertNotSampled,
+			Decision: InvertNotSampled,
 		},
 		{
 			Desc:     "span attribute below min limit",
 			Trace:    newTraceIntAttrs(empty, "example", math.MinInt32-1),
-			Decision: samplingpolicy.InvertSampled,
+			Decision: InvertSampled,
 		},
 		{
 			Desc:     "resource attribute below min limit",
 			Trace:    newTraceIntAttrs(map[string]any{"example": math.MinInt32 - 1}, "non_matching", math.MinInt32),
-			Decision: samplingpolicy.InvertSampled,
+			Decision: InvertSampled,
 		},
 		{
 			Desc:     "span attribute above max limit",
 			Trace:    newTraceIntAttrs(empty, "example", math.MaxInt32+1),
-			Decision: samplingpolicy.InvertSampled,
+			Decision: InvertSampled,
 		},
 		{
 			Desc:     "resource attribute above max limit",
 			Trace:    newTraceIntAttrs(map[string]any{"example": math.MaxInt32 + 1}, "non_matching", math.MaxInt32+1),
-			Decision: samplingpolicy.InvertSampled,
+			Decision: InvertSampled,
 		},
 		{
 			Desc:                  "nonmatching span attribute with DisableInvertDecision",
 			Trace:                 newTraceIntAttrs(empty, "non_matching", math.MinInt32),
-			Decision:              samplingpolicy.Sampled,
+			Decision:              Sampled,
 			DisableInvertDecision: true,
 		},
 		{
 			Desc:                  "span attribute at the lower limit with DisableInvertDecision",
 			Trace:                 newTraceIntAttrs(empty, "example", math.MinInt32),
-			Decision:              samplingpolicy.NotSampled,
+			Decision:              NotSampled,
 			DisableInvertDecision: true,
 		},
 	}
@@ -174,7 +173,7 @@ func TestNumericTagFilterInverted(t *testing.T) {
 				}()
 			}
 			u, _ := uuid.NewRandom()
-			decision, err := filter.Evaluate(t.Context(), pcommon.TraceID(u), c.Trace)
+			decision, err := filter.Evaluate(context.Background(), pcommon.TraceID(u), c.Trace)
 			assert.NoError(t, err)
 			assert.Equal(t, decision, c.Decision)
 		})
@@ -188,49 +187,49 @@ func TestNumericTagFilterOptionalBounds(t *testing.T) {
 		max         *int64
 		value       int64
 		invertMatch bool
-		want        samplingpolicy.Decision
+		want        Decision
 	}{
 		{
 			name:  "only min set - value above min",
 			min:   ptr(int64(100)),
 			max:   nil,
 			value: 200,
-			want:  samplingpolicy.Sampled,
+			want:  Sampled,
 		},
 		{
 			name:  "only min set - value below min",
 			min:   ptr(int64(100)),
 			max:   nil,
 			value: 50,
-			want:  samplingpolicy.NotSampled,
+			want:  NotSampled,
 		},
 		{
 			name:  "only max set - value below max",
 			min:   nil,
 			max:   ptr(int64(100)),
 			value: 50,
-			want:  samplingpolicy.Sampled,
+			want:  Sampled,
 		},
 		{
 			name:  "only max set - value above max",
 			min:   nil,
 			max:   ptr(int64(100)),
 			value: 200,
-			want:  samplingpolicy.NotSampled,
+			want:  NotSampled,
 		},
 		{
 			name:  "both set - value in range",
 			min:   ptr(int64(100)),
 			max:   ptr(int64(200)),
 			value: 150,
-			want:  samplingpolicy.Sampled,
+			want:  Sampled,
 		},
 		{
 			name:  "both set - value out of range",
 			min:   ptr(int64(100)),
 			max:   ptr(int64(200)),
 			value: 50,
-			want:  samplingpolicy.NotSampled,
+			want:  NotSampled,
 		},
 		{
 			name:        "inverted match - only min set - value above min",
@@ -238,7 +237,7 @@ func TestNumericTagFilterOptionalBounds(t *testing.T) {
 			max:         nil,
 			value:       200,
 			invertMatch: true,
-			want:        samplingpolicy.InvertNotSampled,
+			want:        InvertNotSampled,
 		},
 		{
 			name:        "inverted match - only max set - value below max",
@@ -246,7 +245,7 @@ func TestNumericTagFilterOptionalBounds(t *testing.T) {
 			max:         ptr(int64(100)),
 			value:       50,
 			invertMatch: true,
-			want:        samplingpolicy.InvertNotSampled,
+			want:        InvertNotSampled,
 		},
 	}
 
@@ -256,7 +255,7 @@ func TestNumericTagFilterOptionalBounds(t *testing.T) {
 			require.NotNil(t, filter, "filter should not be nil")
 
 			trace := newTraceIntAttrs(map[string]any{}, "example", tt.value)
-			decision, err := filter.Evaluate(t.Context(), pcommon.TraceID{}, trace)
+			decision, err := filter.Evaluate(context.Background(), pcommon.TraceID{}, trace)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, decision)
 		})
@@ -286,7 +285,7 @@ func ptr(i int64) *int64 {
 	return &i
 }
 
-func newTraceIntAttrs(nodeAttrs map[string]any, spanAttrKey string, spanAttrValue int64) *samplingpolicy.TraceData {
+func newTraceIntAttrs(nodeAttrs map[string]any, spanAttrKey string, spanAttrValue int64) *TraceData {
 	traces := ptrace.NewTraces()
 	rs := traces.ResourceSpans().AppendEmpty()
 	//nolint:errcheck
@@ -296,7 +295,7 @@ func newTraceIntAttrs(nodeAttrs map[string]any, spanAttrKey string, spanAttrValu
 	span.SetTraceID([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16})
 	span.SetSpanID([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	span.Attributes().PutInt(spanAttrKey, spanAttrValue)
-	return &samplingpolicy.TraceData{
+	return &TraceData{
 		ReceivedBatches: traces,
 	}
 }

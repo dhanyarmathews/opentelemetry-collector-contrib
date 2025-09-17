@@ -22,6 +22,8 @@ const (
 	NumericAttribute PolicyType = "numeric_attribute"
 	// Probabilistic samples a given percentage of traces.
 	Probabilistic PolicyType = "probabilistic"
+	// Stratified Probabilistic samples a given percentage of traces considering the trace trajectory as well.
+	StratifiedProbabilistic PolicyType = "stratified"
 	// StatusCode sample traces that have a given status code.
 	StatusCode PolicyType = "status_code"
 	// StringAttribute sample traces that an attribute, of type string, matching
@@ -60,6 +62,8 @@ type sharedPolicyCfg struct {
 	NumericAttributeCfg NumericAttributeCfg `mapstructure:"numeric_attribute"`
 	// Configs for probabilistic sampling policy evaluator.
 	ProbabilisticCfg ProbabilisticCfg `mapstructure:"probabilistic"`
+	// Configs for stratified probabilistic sampling policy evaluator.
+	StratifiedProbabilisticCfg StratifiedProbabilisticCfg `mapstructure:"stratified"`
 	// Configs for status code filter sampling policy evaluator.
 	StatusCodeCfg StatusCodeCfg `mapstructure:"status_code"`
 	// Configs for string attribute filter sampling policy evaluator.
@@ -170,6 +174,16 @@ type ProbabilisticCfg struct {
 	SamplingPercentage float64 `mapstructure:"sampling_percentage"`
 }
 
+type StratifiedProbabilisticCfg struct {
+	// HashSalt allows one to configure the hashing salts. This is important in scenarios where multiple layers of collectors
+	// have different sampling rates: if they use the same salt all passing one layer may pass the other even if they have
+	// different sampling rates, configuring different salts avoids that.
+	HashSalt string `mapstructure:"hash_salt"`
+	// SamplingPercentage is the percentage rate at which traces are going to be sampled. Defaults to zero, i.e.: no sample.
+	// Values greater or equal 100 are treated as "sample all traces".
+	SamplingPercentage float64 `mapstructure:"sampling_percentage"`
+}
+
 // StatusCodeCfg holds the configurable settings to create a status code filter sampling
 // policy evaluator.
 type StatusCodeCfg struct {
@@ -254,9 +268,6 @@ type Config struct {
 	// NumTraces is the number of traces kept on memory. Typically most of the data
 	// of a trace is released after a sampling decision is taken.
 	NumTraces uint64 `mapstructure:"num_traces"`
-	// BlockOnOverflow determines the behavior when the component's NumTraces limit is reached.
-	// If true, the component will wait for space; otherwise, old traces will be evicted to make space.
-	BlockOnOverflow bool `mapstructure:"block_on_overflow"`
 	// ExpectedNewTracesPerSec sets the expected number of new traces sending to the tail sampling processor
 	// per second. This helps with allocating data structures with closer to actual usage size.
 	ExpectedNewTracesPerSec uint64 `mapstructure:"expected_new_traces_per_sec"`

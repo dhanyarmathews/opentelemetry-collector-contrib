@@ -4,6 +4,7 @@
 package sampling
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -11,8 +12,6 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/pkg/samplingpolicy"
 )
 
 func TestEvaluate_Latency(t *testing.T) {
@@ -24,7 +23,7 @@ func TestEvaluate_Latency(t *testing.T) {
 	cases := []struct {
 		Desc     string
 		Spans    []spanWithTimeAndDuration
-		Decision samplingpolicy.Decision
+		Decision Decision
 	}{
 		{
 			"trace duration shorter than threshold",
@@ -34,7 +33,7 @@ func TestEvaluate_Latency(t *testing.T) {
 					Duration:  4500 * time.Millisecond,
 				},
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"trace duration is equal to threshold",
@@ -44,7 +43,7 @@ func TestEvaluate_Latency(t *testing.T) {
 					Duration:  5000 * time.Millisecond,
 				},
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"total trace duration is longer than threshold but every single span is shorter",
@@ -58,13 +57,13 @@ func TestEvaluate_Latency(t *testing.T) {
 					Duration:  3000 * time.Millisecond,
 				},
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.Desc, func(t *testing.T) {
-			decision, err := filter.Evaluate(t.Context(), traceID, newTraceWithSpans(c.Spans))
+			decision, err := filter.Evaluate(context.Background(), traceID, newTraceWithSpans(c.Spans))
 
 			assert.NoError(t, err)
 			assert.Equal(t, decision, c.Decision)
@@ -81,7 +80,7 @@ func TestEvaluate_Bounded_Latency(t *testing.T) {
 	cases := []struct {
 		Desc     string
 		Spans    []spanWithTimeAndDuration
-		Decision samplingpolicy.Decision
+		Decision Decision
 	}{
 		{
 			"trace duration shorter than lower bound",
@@ -91,7 +90,7 @@ func TestEvaluate_Bounded_Latency(t *testing.T) {
 					Duration:  4500 * time.Millisecond,
 				},
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"trace duration is equal to lower bound",
@@ -101,7 +100,7 @@ func TestEvaluate_Bounded_Latency(t *testing.T) {
 					Duration:  5000 * time.Millisecond,
 				},
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"trace duration is within lower and upper bounds",
@@ -111,7 +110,7 @@ func TestEvaluate_Bounded_Latency(t *testing.T) {
 					Duration:  5001 * time.Millisecond,
 				},
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"trace duration is above upper bound",
@@ -121,7 +120,7 @@ func TestEvaluate_Bounded_Latency(t *testing.T) {
 					Duration:  10001 * time.Millisecond,
 				},
 			},
-			samplingpolicy.NotSampled,
+			NotSampled,
 		},
 		{
 			"trace duration equals upper bound",
@@ -131,7 +130,7 @@ func TestEvaluate_Bounded_Latency(t *testing.T) {
 					Duration:  10000 * time.Millisecond,
 				},
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 		{
 			"total trace duration is longer than threshold but every single span is shorter",
@@ -145,13 +144,13 @@ func TestEvaluate_Bounded_Latency(t *testing.T) {
 					Duration:  3000 * time.Millisecond,
 				},
 			},
-			samplingpolicy.Sampled,
+			Sampled,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.Desc, func(t *testing.T) {
-			decision, err := filter.Evaluate(t.Context(), traceID, newTraceWithSpans(c.Spans))
+			decision, err := filter.Evaluate(context.Background(), traceID, newTraceWithSpans(c.Spans))
 
 			assert.NoError(t, err)
 			assert.Equal(t, decision, c.Decision)
@@ -164,7 +163,7 @@ type spanWithTimeAndDuration struct {
 	Duration  time.Duration
 }
 
-func newTraceWithSpans(spans []spanWithTimeAndDuration) *samplingpolicy.TraceData {
+func newTraceWithSpans(spans []spanWithTimeAndDuration) *TraceData {
 	traces := ptrace.NewTraces()
 	rs := traces.ResourceSpans().AppendEmpty()
 	ils := rs.ScopeSpans().AppendEmpty()
@@ -177,7 +176,7 @@ func newTraceWithSpans(spans []spanWithTimeAndDuration) *samplingpolicy.TraceDat
 		span.SetEndTimestamp(pcommon.NewTimestampFromTime(s.StartTime.Add(s.Duration)))
 	}
 
-	return &samplingpolicy.TraceData{
+	return &TraceData{
 		ReceivedBatches: traces,
 	}
 }
