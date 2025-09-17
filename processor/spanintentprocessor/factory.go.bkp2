@@ -1,0 +1,60 @@
+package spanintentprocessor
+
+import (
+	"context"
+	"time"
+
+	"go.opentelemetry.io/collector/component"
+	//"go.opentelemetry.io/collector/config"
+	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/processor"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanintentprocessor/internal/metadata"
+)
+
+const (
+	// TypeStr is the unique identifier for the processor.
+	TypeStr = "spanintentprocessor"
+)
+
+// NewFactory creates a new factory for the spanintentprocessor.
+func NewFactory() processor.Factory {
+	return processor.NewFactory(
+		component.MustNewType(TypeStr),
+		createDefaultConfig,
+		processor.WithTraces(createTracesProcessor, metadata.TracesStability),
+	)
+}
+
+// createDefaultConfig returns the default configuration for the processor.
+func createDefaultConfig() component.Config {
+	return &Config{
+		ProcessorSettings:  config.NewProcessorSettings(component.NewID(TypeStr)),
+		TickInterval:       10 * time.Second,
+		SamplingPercentage: 0.3,
+		SamplingBias: SamplingBias{
+			Normal:   0.3,
+			Degraded: 1.0,
+			Failed:   1.0,
+		},
+		SampledTracesCacheSize:   10000,
+		UnsampledTracesCacheSize: 10000,
+	}
+}
+
+// createTracesProcessor creates the trace processor instance.
+func createTracesProcessor(
+	ctx context.Context,
+	settings processor.Settings,
+	cfg component.Config,
+	nextConsumer consumer.Traces,
+) (processor.Traces, error) {
+	config := cfg.(*Config)
+
+	telemetry, err := metadata.NewTelemetryBuilder(settings.TelemetrySettings, config.ID())
+	if err != nil {
+		return nil, err
+	}
+
+	return newSpanIntentProcessor(settings.Logger, config, nextConsumer, telemetry)
+}
