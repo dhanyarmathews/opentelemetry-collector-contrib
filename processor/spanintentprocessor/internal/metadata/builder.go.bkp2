@@ -1,0 +1,81 @@
+package metadata
+
+import (
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/otel/metric"
+)
+
+type TelemetryBuilder struct {
+	meter metric.Meter
+
+	ProcessorSpanintentSpansReceived           metric.Int64Counter
+	ProcessorSpanintentNewTraceIdReceived      metric.Int64Counter
+	ProcessorSpanintentTracesProcessed         metric.Int64Counter
+	ProcessorSpanintentTracesClassifiedTotal   metric.Int64Counter
+	ProcessorSpanintentTracesSampled           metric.Int64Counter
+	ProcessorSpanintentTracesUnsampled         metric.Int64Counter
+	ProcessorSpanintentProcessingDuration      metric.Int64ValueRecorder
+	ProcessorSpanintentSamplingDecisionLatency metric.Int64ValueRecorder
+	ProcessorSpanintentSampledCacheHits        metric.Int64Counter
+	ProcessorSpanintentSampledCacheMisses      metric.Int64Counter
+	ProcessorSpanintentUnsampledCacheHits      metric.Int64Counter
+	ProcessorSpanintentUnsampledCacheMisses    metric.Int64Counter
+	ProcessorSpanintentTraceBufferSize         metric.Int64Counter
+	ProcessorSpanintentErrorsTotal             metric.Int64Counter
+}
+
+func NewTelemetryBuilder(set component.TelemetrySettings, id component.ID) (*TelemetryBuilder, error) {
+	meter := set.MeterProvider.Meter(id.String())
+
+	tb := &TelemetryBuilder{
+		meter: meter,
+	}
+
+	var err error
+
+	if tb.ProcessorSpanintentSpansReceived, err = meter.NewInt64Counter("processor_spanintent_spans_received"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentNewTraceIdReceived, err = meter.NewInt64Counter("processor_spanintent_new_trace_id_received"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesProcessed, err = meter.NewInt64Counter("processor_spanintent_traces_processed"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesClassifiedTotal, err = meter.NewInt64Counter("processor_spanintent_traces_classified_total"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesSampled, err = meter.NewInt64Counter("processor_spanintent_traces_sampled"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesUnsampled, err = meter.NewInt64Counter("processor_spanintent_traces_unsampled"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentProcessingDuration, err = meter.NewInt64ValueRecorder("processor_spanintent_processing_duration"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentSamplingDecisionLatency, err = meter.NewInt64ValueRecorder("processor_spanintent_sampling_decision_latency"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentSampledCacheHits, err = meter.NewInt64Counter("processor_spanintent_sampled_cache_hits"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentSampledCacheMisses, err = meter.NewInt64Counter("processor_spanintent_sampled_cache_misses"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentUnsampledCacheHits, err = meter.NewInt64Counter("processor_spanintent_unsampled_cache_hits"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentUnsampledCacheMisses, err = meter.NewInt64Counter("processor_spanintent_unsampled_cache_misses"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTraceBufferSize, err = meter.NewInt64Counter("processor_spanintent_trace_buffer_size"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentErrorsTotal, err = meter.NewInt64Counter("processor_spanintent_errors_total"); err != nil {
+		return nil, err
+	}
+
+	return tb, nil
+}
+

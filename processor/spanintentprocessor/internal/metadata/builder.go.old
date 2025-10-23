@@ -1,0 +1,92 @@
+package metadata
+
+import (
+	"context"
+
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/telemetry"
+	"go.opentelemetry.io/collector/telemetry/metric"
+)
+
+// TelemetryBuilder exposes metrics instruments for use in spanintentprocessor.
+type TelemetryBuilder struct {
+	meter telemetry.Meter
+
+	ProcessorSpanintentSpansReceived          metric.Int64Counter
+	ProcessorSpanintentNewTraceIDReceived     metric.Int64Counter
+	ProcessorSpanintentTracesProcessed        metric.Int64Counter
+	ProcessorSpanintentTracesClassifiedTotal  metric.Int64Counter
+	ProcessorSpanintentTracesSampled          metric.Int64Counter
+	ProcessorSpanintentTracesUnsampled        metric.Int64Counter
+	ProcessorSpanintentProcessingDuration     metric.Int64Histogram
+	ProcessorSpanintentSamplingDecisionLatency metric.Int64Histogram
+	ProcessorSpanintentSampledCacheHits       metric.Int64Counter
+	ProcessorSpanintentSampledCacheMisses     metric.Int64Counter
+	ProcessorSpanintentUnsampledCacheHits     metric.Int64Counter
+	ProcessorSpanintentUnsampledCacheMisses   metric.Int64Counter
+	ProcessorSpanintentTraceBufferSize        metric.Int64ObservableGauge
+	ProcessorSpanintentErrorsTotal            metric.Int64Counter
+}
+
+// NewTelemetryBuilder initializes the metrics instruments based on metadata.yaml.
+func NewTelemetryBuilder(set component.TelemetrySettings, id component.ID) (*TelemetryBuilder, error) {
+	meter := set.MeterProvider.Meter(id.String())
+
+	tb := &TelemetryBuilder{
+		meter: meter,
+	}
+
+	var err error
+
+	if tb.ProcessorSpanintentSpansReceived, err = meter.Int64Counter("processor_spanintent_spans_received"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentNewTraceIDReceived, err = meter.Int64Counter("processor_spanintent_new_trace_id_received"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesProcessed, err = meter.Int64Counter("processor_spanintent_traces_processed"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesClassifiedTotal, err = meter.Int64Counter("processor_spanintent_traces_classified_total"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesSampled, err = meter.Int64Counter("processor_spanintent_traces_sampled"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTracesUnsampled, err = meter.Int64Counter("processor_spanintent_traces_unsampled"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentProcessingDuration, err = meter.Int64Histogram("processor_spanintent_processing_duration"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentSamplingDecisionLatency, err = meter.Int64Histogram("processor_spanintent_sampling_decision_latency"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentSampledCacheHits, err = meter.Int64Counter("processor_spanintent_sampled_cache_hits"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentSampledCacheMisses, err = meter.Int64Counter("processor_spanintent_sampled_cache_misses"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentUnsampledCacheHits, err = meter.Int64Counter("processor_spanintent_unsampled_cache_hits"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentUnsampledCacheMisses, err = meter.Int64Counter("processor_spanintent_unsampled_cache_misses"); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentTraceBufferSize, err = meter.Int64ObservableGauge(
+		"processor_spanintent_trace_buffer_size",
+		metric.WithInt64Callback(func(ctx context.Context, obs metric.Int64Observer) error {
+			// No-op by default. Implement registration from outside if needed.
+			return nil
+		}),
+	); err != nil {
+		return nil, err
+	}
+	if tb.ProcessorSpanintentErrorsTotal, err = meter.Int64Counter("processor_spanintent_errors_total"); err != nil {
+		return nil, err
+	}
+
+	return tb, nil
+}
+
