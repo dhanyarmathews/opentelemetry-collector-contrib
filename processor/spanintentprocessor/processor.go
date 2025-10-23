@@ -34,6 +34,10 @@ type spanIntentProcessor struct {
 	tdigestMutex    sync.Mutex
 	traceDataBuffer map[pcommon.TraceID]*traceData
 	tdigestMap      map[string]*utility.TDigest
+	decayingTDigestMap map[string]*decayingTDigest
+	modelTDigestMap map[string]*decayingTDigest
+        quantileEMAMap   map[string]*quantileEMA           // smoothed q75/q95
+        emaAlpha         float64
 	sampledTraces   cache.Cache[bool]
 	unsampledTraces cache.Cache[bool]
 	stopCh          chan struct{}
@@ -58,6 +62,12 @@ type spanIntentProcessor struct {
 type traceData struct {
 	resourceAttrs pcommon.Map
 	spans         []ptrace.Span
+}
+
+type decayingTDigest struct {
+    td          *utility.TDigest
+    weightSum   float64
+    decayFactor float64
 }
 
 func newSpanIntentProcessor(
@@ -143,6 +153,9 @@ func newSpanIntentProcessor(
 		nextConsumer:    nextConsumer,
 		traceDataBuffer: make(map[pcommon.TraceID]*traceData),
 		tdigestMap:      make(map[string]*utility.TDigest),
+		modelTDigestMap: make(map[string]*decayingTDigest),
+                quantileEMAMap:  make(map[string]*quantileEMA),
+                emaAlpha:        0.1, // smoothing factor: adjust as needed
 		sampledTraces:   sampledCache,
 		unsampledTraces: unsampledCache,
 		stopCh:          make(chan struct{}),
@@ -164,6 +177,27 @@ func newSpanIntentProcessor(
 	}, nil
 }
 
+type quantileEMA struct {
+    Q75 float64
+    Q95 float64
+    Initialized bool
+}
+
+func (d *decayingTDigest) Add(latency float64) {
+    // Apply decay to existing weights
+    d.weightSum *= d.decayFactor
+    // Add new latency with weight 1
+    d.td.Add(latency, 1)
+    d.weightSum += 1
+}
+
+func (d *decayingTDigest) Quantile(q float64) float64 {
+    if d.weightSum < 1e-6 {
+        return 0 // no data yet, fallback to zero or some default
+    }
+    return d.td.Quantile(q)
+}
+
 func (p *spanIntentProcessor) Start(ctx context.Context, host component.Host) error {
 	// go p.runTickLoop()
 	p.logger.Info("spanintentprocessor started")
@@ -175,7 +209,7 @@ func (p *spanIntentProcessor) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+/*func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	resourceSpans := td.ResourceSpans()
 
 	p.logger.Info("Entering processTraces")
@@ -186,6 +220,7 @@ func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Trace
 	failedSet := make(map[pcommon.TraceID]struct{})
 
 	tracesToProcess := make(map[pcommon.TraceID]*traceData) // To hold traces that are not in sampled or unsampled cache
+	tracesToForwardImmediately := make(map[pcommon.TraceID]*traceData)
 
 	startTime := time.Now()
 
@@ -202,45 +237,62 @@ func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Trace
 				traceID := span.TraceID()
 
 				p.mSpansReceived.Add(ctx, 1)
+				var traceDataItem *traceData
+				// alreadyClassified := false
 
 				// Lock and check if trace ID exists in sampled/unsampled caches
 				p.mu.Lock()
-				// If trace is not in the cache, initialize the trace entry
-				if sampled, ok := p.sampledTraces.Get(traceID); ok && sampled {
-					p.mSampledCacheHits.Add(context.Background(), 1)
-					p.mu.Unlock()
-					continue
-				} else {
-					p.mSampledCacheMisses.Add(context.Background(), 1)
-				}
 
+				if sampled, ok := p.sampledTraces.Get(traceID); ok && sampled {
+                                        p.mSampledCacheHits.Add(context.Background(), 1)
+                                        // alreadyClassified = true
+					if data, exists := tracesToForwardImmediately[traceID]; exists {
+                                                traceDataItem = data
+                                        } else {
+                                                attrCopy := pcommon.NewMap()
+                                                resourceAttrs.CopyTo(attrCopy)
+                                                traceDataItem = &traceData{
+                                                        resourceAttrs: attrCopy,
+                                                        spans:         []ptrace.Span{},
+                                                }
+                                                tracesToForwardImmediately[traceID] = traceDataItem
+                                        }
+                                        traceDataItem.spans = append(traceDataItem.spans, span)
+                                        p.mu.Unlock()
+                                        continue
+                                }
 				if unsampled, ok := p.unsampledTraces.Get(traceID); ok && unsampled {
-					p.mUnsampledCacheHits.Add(context.Background(), 1)
+                                        p.mUnsampledCacheHits.Add(context.Background(), 1)
+                                        // alreadyClassified = true
 					p.mu.Unlock()
-					continue
-				} else {
-					p.mUnsampledCacheMisses.Add(context.Background(), 1)
-				}
-				// data, exists := p.traceDataBuffer[traceID]
-				data, exists := tracesToProcess[traceID]
-				if !exists {
-					// If trace doesn't exist, create a new entry
-					p.mNewTraceIDReceived.Add(ctx, 1)
-					attrCopy := pcommon.NewMap()
-					resourceAttrs.CopyTo(attrCopy)
-					data = &traceData{
-						resourceAttrs: attrCopy,
-						spans:         []ptrace.Span{},
-					}
-					// p.traceDataBuffer[traceID] = data
-					tracesToProcess[traceID] = data
-				}
-				// Add the span to the trace data
-				data.spans = append(data.spans, span)
-				p.mu.Unlock()
+                                        continue
+                                }
+				if data, exists := tracesToProcess[traceID]; exists {
+                                        traceDataItem = data
+                                } else {
+                                        // New trace ID: increment the counter and add it to tracesToProcess
+                                        p.mNewTraceIDReceived.Add(ctx, 1)
+                                        p.logger.Debug("New trace ID received", zap.String("trace_id", traceID.String()))
+                                        // Create a new trace entry and store it in tracesToProcess
+                                        attrCopy := pcommon.NewMap()
+                                        resourceAttrs.CopyTo(attrCopy)
+                                        traceDataItem = &traceData{
+                                                resourceAttrs: attrCopy,
+                                                spans:         []ptrace.Span{},
+                                        }
+                                        tracesToProcess[traceID] = traceDataItem
+                                }
+                                // Add span to the trace's list of spans
+                                traceDataItem.spans = append(traceDataItem.spans, span)
+                                p.mu.Unlock()
+
+				// Skip classification for already-decided traces
+                                // if alreadyClassified {
+                                //         continue
+                                // }
 
 				serviceName := "unknown"
-				if attr, ok := data.resourceAttrs.Get("service.name"); ok && attr.Type() == pcommon.ValueTypeStr {
+				if attr, ok := traceDataItem.resourceAttrs.Get("service.name"); ok && attr.Type() == pcommon.ValueTypeStr {
 					serviceName = attr.Str()
 				}
 				opName := span.Name()
@@ -254,18 +306,23 @@ func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Trace
 					p.tdigestMap[key] = tdigest
 				}
 
+				if attr, ok := span.Attributes().Get("http.status_code"); ok {
+					if attr.Type() == pcommon.ValueTypeInt && attr.Int() != 200 {
+						failedSet[traceID] = struct{}{}
+						// Skip latency-based classification because status code indicates failure
+						continue
+					}
+				}
+
 				// Add the latency of the current span to the TDigest for the service + operation pair
 				latencyMs := float64(span.EndTimestamp()-span.StartTimestamp()) / 1e6
 				tdigest.Add(latencyMs, 1)
 
 				// Classify the latency
-				q25 := tdigest.Quantile(0.25)
 				q75 := tdigest.Quantile(0.75)
 				q95 := tdigest.Quantile(0.95)
 				switch {
-				case latencyMs < q25:
-					degradedSet[traceID] = struct{}{}
-				case latencyMs >= q25 && latencyMs < q75:
+				case latencyMs < q75:
 					normalSet[traceID] = struct{}{}
 				case latencyMs >= q75 && latencyMs < q95:
 					degradedSet[traceID] = struct{}{}
@@ -282,9 +339,279 @@ func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Trace
 	// Call processTracesForSampling to decide which traces to sample
 	p.processTracesForSampling(normalSet, degradedSet, failedSet, tracesToProcess)
 
+	for tid, data := range tracesToForwardImmediately {
+                p.forwardTrace(tid, data.spans, data.resourceAttrs)
+        }
+
 	p.mSamplingDecisionLatency.Record(context.Background(), int64(time.Since(startTime)/time.Millisecond))
 	return td, nil
+}*/
+
+/*func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+        resourceSpans := td.ResourceSpans()
+
+        p.logger.Info("Entering processTraces")
+
+        // Initialize sets for normal, degraded, and failed traces
+        normalSet := make(map[pcommon.TraceID]struct{})
+        degradedSet := make(map[pcommon.TraceID]struct{})
+        failedSet := make(map[pcommon.TraceID]struct{})
+
+        tracesToProcess := make(map[pcommon.TraceID]*traceData) // To hold traces that are not in sampled or unsampled cache
+        tracesToForwardImmediately := make(map[pcommon.TraceID]*traceData)
+
+        startTime := time.Now()
+	const decayFactor = 0.97
+
+        // Loop through resource spans and process traces
+        for i := 0; i < resourceSpans.Len(); i++ {
+                rs := resourceSpans.At(i)
+                resourceAttrs := rs.Resource().Attributes()
+
+                ils := rs.ScopeSpans()
+                for j := 0; j < ils.Len(); j++ {
+                        spans := ils.At(j).Spans()
+                        for k := 0; k < spans.Len(); k++ {
+                                span := spans.At(k)
+                                traceID := span.TraceID()
+
+                                p.mSpansReceived.Add(ctx, 1)
+
+                                var traceDataItem *traceData
+                                //alreadyClassified := false
+
+                                // Lock and check if trace ID exists in sampled/unsampled caches
+                                p.mu.Lock()
+                                if sampled, ok := p.sampledTraces.Get(traceID); ok && sampled {
+                                        p.mSampledCacheHits.Add(context.Background(), 1)
+                                        //alreadyClassified = true
+                                        if data, exists := tracesToForwardImmediately[traceID]; exists {
+                                                traceDataItem = data
+                                        } else {
+                                                attrCopy := pcommon.NewMap()
+                                                resourceAttrs.CopyTo(attrCopy)
+                                                traceDataItem = &traceData{
+                                                        resourceAttrs: attrCopy,
+                                                        spans:         []ptrace.Span{},
+                                                }
+                                                tracesToForwardImmediately[traceID] = traceDataItem
+                                        }
+                                        traceDataItem.spans = append(traceDataItem.spans, span)
+					//delete(tracesToProcess, traceID)
+                                        p.mu.Unlock()
+                                        continue
+                                }
+                                if unsampled, ok := p.unsampledTraces.Get(traceID); ok && unsampled {
+                                        p.mUnsampledCacheHits.Add(context.Background(), 1)
+                                        // alreadyClassified = true
+                                        p.mu.Unlock()
+                                        continue
+                                }
+                                if data, exists := tracesToProcess[traceID]; exists {
+                                        traceDataItem = data
+                                } else {
+                                        // New trace ID: increment the counter and add it to tracesToProcess
+                                        p.mNewTraceIDReceived.Add(ctx, 1)
+                                        p.logger.Debug("New trace ID received", zap.String("trace_id", traceID.String()))
+                                        // Create a new trace entry and store it in tracesToProcess
+                                        attrCopy := pcommon.NewMap()
+                                        resourceAttrs.CopyTo(attrCopy)
+                                        traceDataItem = &traceData{
+                                                resourceAttrs: attrCopy,
+                                                spans:         []ptrace.Span{},
+                                        }
+                                        tracesToProcess[traceID] = traceDataItem
+                                }
+                                // Add span to the trace's list of spans
+                                traceDataItem.spans = append(traceDataItem.spans, span)
+                                p.mu.Unlock()
+
+                                // Skip classification for already-decided traces
+                                // if alreadyClassified {
+                                //      continue
+                                //}
+                                serviceName := "unknown"
+                                if attr, ok := traceDataItem.resourceAttrs.Get("service.name"); ok && attr.Type() == pcommon.ValueTypeStr {
+                                        serviceName = attr.Str()
+                                }
+                                opName := span.Name()
+                                key := fmt.Sprintf("%s_%s", serviceName, opName)
+
+                                p.tdigestMutex.Lock()
+				dtd, exists := p.decayingTDigestMap[key]
+
+                                if !exists {
+                                        dtd = &decayingTDigest{
+                                                td:          utility.NewTDigest(100),
+                                                decayFactor: decayFactor,
+                                                weightSum:   0,
+                                        }
+                                        p.decayingTDigestMap[key] = dtd
+                                }
+                                // Check if there's already a TDigest for this serviceName + opName pair
+                                //tdigest, exists := p.tdigestMap[key]
+                                //if !exists {
+                                //        tdigest = utility.NewTDigest(100) // Create a new TDigest if it doesn't exist for this pair
+                                //        p.tdigestMap[key] = tdigest
+                                //}
+
+                                if attr, ok := span.Attributes().Get("http.status_code"); ok {
+                                        if attr.Type() == pcommon.ValueTypeInt && attr.Int() != 200 {
+                                                failedSet[traceID] = struct{}{}
+                                                p.tdigestMutex.Unlock()
+                                                // Skip latency-based classification because status code indicates failure
+                                                continue
+                                        }
+                                }
+
+                                // Add the latency of the current span to the TDigest for the service + operation pair
+                                latencyMs := float64(span.EndTimestamp()-span.StartTimestamp()) / 1e6
+                                //tdigest.Add(latencyMs, 1)
+				dtd.Add(latencyMs)
+
+                                // Classify the latency
+                                //q75 := tdigest.Quantile(0.75)
+                                //q95 := tdigest.Quantile(0.95)
+				q75 := dtd.Quantile(0.75)
+                                q95 := dtd.Quantile(0.95)
+                                switch {
+                                case latencyMs < q75:
+                                        normalSet[traceID] = struct{}{}
+                                case latencyMs >= q75 && latencyMs < q95:
+                                        degradedSet[traceID] = struct{}{}
+                                default:
+                                        failedSet[traceID] = struct{}{}
+                                }
+
+                                p.tdigestMutex.Unlock()
+
+                        }
+                }
+        }
+        // Call processTracesForSampling to decide which traces to sample
+        p.processTracesForSampling(normalSet, degradedSet, failedSet, tracesToProcess)
+
+        for tid, data := range tracesToForwardImmediately {
+		p.logger.Debug("Forwarding from sampled cache", zap.String("trace_id", tid.String()))
+                p.forwardTrace(tid, data.spans, data.resourceAttrs)
+        }
+
+        p.mSamplingDecisionLatency.Record(context.Background(), int64(time.Since(startTime)/time.Millisecond))
+        return td, nil
+}*/
+
+func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+    resourceSpans := td.ResourceSpans()
+    p.logger.Info("Entering processTraces")
+
+    // Init sets
+    normalSet := make(map[pcommon.TraceID]struct{})
+    degradedSet := make(map[pcommon.TraceID]struct{})
+    failedSet := make(map[pcommon.TraceID]struct{})
+
+    tracesToProcess := make(map[pcommon.TraceID]*traceData)
+    tracesToForwardImmediately := make(map[pcommon.TraceID]*traceData)
+
+    startTime := time.Now()
+
+    for i := 0; i < resourceSpans.Len(); i++ {
+        rs := resourceSpans.At(i)
+        resourceAttrs := rs.Resource().Attributes()
+        ils := rs.ScopeSpans()
+
+        for j := 0; j < ils.Len(); j++ {
+            spans := ils.At(j).Spans()
+
+            for k := 0; k < spans.Len(); k++ {
+                span := spans.At(k)
+                traceID := span.TraceID()
+                p.mSpansReceived.Add(ctx, 1)
+
+                p.mu.Lock()
+                if sampled, ok := p.sampledTraces.Get(traceID); ok && sampled {
+                    p.mSampledCacheHits.Add(ctx, 1)
+                    traceDataItem := getOrCreateTrace(traceID, resourceAttrs, tracesToForwardImmediately)
+                    traceDataItem.spans = append(traceDataItem.spans, span)
+                    p.mu.Unlock()
+                    continue
+                }
+                if unsampled, ok := p.unsampledTraces.Get(traceID); ok && unsampled {
+                    p.mUnsampledCacheHits.Add(ctx, 1)
+                    p.mu.Unlock()
+                    continue
+                }
+
+                traceDataItem := getOrCreateTrace(traceID, resourceAttrs, tracesToProcess)
+                traceDataItem.spans = append(traceDataItem.spans, span)
+                p.mu.Unlock()
+                // -------- Categorization begins --------
+                serviceName := "unknown"
+                if attr, ok := traceDataItem.resourceAttrs.Get("service.name"); ok && attr.Type() == pcommon.ValueTypeStr {
+                    serviceName = attr.Str()
+                }
+
+                key := fmt.Sprintf("%s_%s", serviceName, span.Name())
+                latencyMs := float64(span.EndTimestamp() - span.StartTimestamp()) / 1e6
+
+                p.tdigestMutex.Lock()
+
+                td, ok := p.tdigestMap[key]
+                if !ok {
+                        td = utility.NewTDigest(100)
+                        p.tdigestMap[key] = td
+                }
+                td.Add(latencyMs, 1)
+                //if td.TotalWeight() >= 20 {
+                q75 := td.Quantile(0.75)
+                q95 := td.Quantile(0.95)
+                ema, exists := p.quantileEMAMap[key]
+                if !exists {
+                        p.quantileEMAMap[key] = &quantileEMA{
+                                Q75: q75,
+                                Q95: q95,
+                                Initialized: true,
+                        }
+                } else {
+                        alpha := p.emaAlpha
+                        ema.Q75 = alpha*q75 + (1-alpha)*ema.Q75
+                        ema.Q95 = alpha*q95 + (1-alpha)*ema.Q95
+                }
+                p.tdigestMutex.Unlock()
+
+                if attr, ok := span.Attributes().Get("http.status_code"); ok {
+                    if attr.Type() == pcommon.ValueTypeInt && attr.Int() != 200 {
+                        failedSet[traceID] = struct{}{}
+                        continue
+                    }
+                }
+
+                if ema, ok := p.quantileEMAMap[key]; ok && ema.Initialized {
+                        switch {
+                                case latencyMs < ema.Q75:
+                                        normalSet[traceID] = struct{}{}
+                                case latencyMs < ema.Q95:
+                                        degradedSet[traceID] = struct{}{}
+                                default:
+                                        failedSet[traceID] = struct{}{}
+                                }
+                        } else {
+                                normalSet[traceID] = struct{}{}
+                        }
+            }
+        }
+    }
+
+    p.processTracesForSampling(normalSet, degradedSet, failedSet, tracesToProcess)
+
+    for tid, data := range tracesToForwardImmediately {
+        p.forwardTrace(tid, data.spans, data.resourceAttrs)
+    }
+
+    p.mSamplingDecisionLatency.Record(ctx, int64(time.Since(startTime)/time.Millisecond))
+    return td, nil
 }
+
+
 
 /*func (p *spanIntentProcessor) processTracesForSampling(normalSet map[pcommon.TraceID]struct{}, degradedSet map[pcommon.TraceID]struct{}, failedSet map[pcommon.TraceID]struct{}, tracesToProcess map[pcommon.TraceID]*traceData) {
 	p.logger.Info("Entering processTracesForSampling")
@@ -402,6 +729,8 @@ func (p *spanIntentProcessor) processTracesForSampling(
 	p.mTracesClassifiedTotal.Add(context.Background(), int64(len(normalSet)), metric.WithAttributes(attribute.String("classification_category", "normal")))
 	p.mTracesClassifiedTotal.Add(context.Background(), int64(len(degradedSet)), metric.WithAttributes(attribute.String("classification_category", "degraded")))
 	p.mTracesClassifiedTotal.Add(context.Background(), int64(len(failedSet)), metric.WithAttributes(attribute.String("classification_category", "failed")))
+
+	p.logger.Info("[TRACE] Traces classified", zap.Int("normal", len(normalSet)), zap.Int("degraded", len(degradedSet)), zap.Int("failed", len(failedSet)),)
 
 	type category int
 	const (
@@ -557,6 +886,28 @@ func (p *spanIntentProcessor) processTracesForSampling(
 	}
 }
 
+// getOrCreateTrace returns an existing traceData object from the map or creates a new one
+func getOrCreateTrace(
+    traceID pcommon.TraceID,
+    resourceAttrs pcommon.Map,
+    traceMap map[pcommon.TraceID]*traceData,
+) *traceData {
+    if data, exists := traceMap[traceID]; exists {
+        return data
+    }
+
+    attrCopy := pcommon.NewMap()
+    resourceAttrs.CopyTo(attrCopy)
+
+    traceDataItem := &traceData{
+        resourceAttrs: attrCopy,
+        spans:         []ptrace.Span{},
+    }
+
+    traceMap[traceID] = traceDataItem
+    return traceDataItem
+}
+
 func extractSpanLatencies(td *traceData) []float64 {
 	var latencies []float64
 	for _, span := range td.spans {
@@ -652,6 +1003,10 @@ func (p *spanIntentProcessor) forwardTrace(traceID pcommon.TraceID, spans []ptra
 		//spanCopy.CopyFrom(span)
 		span.CopyTo(spansSlice.AppendEmpty())
 	}
+	p.logger.Debug("Forwarding trace",
+                zap.String("trace_id", traceID.String()),
+                zap.Int("span_count", len(spans)),
+        )
 	if err := p.nextConsumer.ConsumeTraces(context.Background(), td); err != nil {
 		p.logger.Warn("failed to forward trace", zap.Error(err))
 		//p.mErrorsTotal.Add(context.Background(), 1, attribute.String("error_type", "forwarding_failed"))
