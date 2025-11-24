@@ -247,6 +247,75 @@ func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Trace
 				traceID := span.TraceID()
 				p.mSpansReceived.Add(ctx, 1)
 
+<<<<<<< HEAD
+                p.mu.Lock()
+                if sampled, ok := p.sampledTraces.Get(traceID); ok && sampled {
+                    p.mSampledCacheHits.Add(ctx, 1)
+                    traceDataItem := getOrCreateTrace(traceID, resourceAttrs, tracesToForwardImmediately)
+                    traceDataItem.spans = append(traceDataItem.spans, span)
+                    p.mu.Unlock()
+                    continue
+                }
+                if unsampled, ok := p.unsampledTraces.Get(traceID); ok && unsampled {
+                    p.mUnsampledCacheHits.Add(ctx, 1)
+                    p.mu.Unlock()
+                    continue
+                }
+
+                traceDataItem := getOrCreateTrace(traceID, resourceAttrs, tracesToProcess)
+                traceDataItem.spans = append(traceDataItem.spans, span)
+                p.mu.Unlock()
+
+                serviceName := "unknown"
+                if attr, ok := traceDataItem.resourceAttrs.Get("service.name"); ok && attr.Type() == pcommon.ValueTypeStr {
+                    serviceName = attr.Str()
+                }
+
+                key := fmt.Sprintf("%s_%s", serviceName, span.Name())
+                latencyMs := float64(span.EndTimestamp() - span.StartTimestamp()) / 1e6
+
+                p.tdigestMutex.Lock()
+
+		td, ok := p.tdigestMap[key]
+		if !ok {
+			td = utility.NewTDigest(100)
+			p.tdigestMap[key] = td
+		}
+		td.Add(latencyMs, 1)
+		//if td.TotalWeight() >= 20 {
+		q75 := td.Quantile(0.75)
+		q95 := td.Quantile(0.95)
+		ema, exists := p.quantileEMAMap[key]
+		if !exists {
+			p.quantileEMAMap[key] = &quantileEMA{
+				Q75: q75,
+				Q95: q95,
+				Initialized: true,
+			}
+		} else {
+			alpha := p.emaAlpha
+			ema.Q75 = alpha*q75 + (1-alpha)*ema.Q75
+			ema.Q95 = alpha*q95 + (1-alpha)*ema.Q95
+		}
+
+                p.tdigestMutex.Unlock()
+
+                if attr, ok := span.Attributes().Get("http.status_code"); ok {
+                    if attr.Type() == pcommon.ValueTypeInt && attr.Int() != 200 {
+                        failedSet[traceID] = struct{}{}
+                        continue
+                    }
+                }
+
+		if ema, ok := p.quantileEMAMap[key]; ok && ema.Initialized {
+			switch {
+				case latencyMs < ema.Q75:
+					normalSet[traceID] = struct{}{}
+				case latencyMs < ema.Q95:
+					degradedSet[traceID] = struct{}{}
+				default:
+					failedSet[traceID] = struct{}{}
+=======
 				p.mu.Lock()
 				if sampled, ok := p.sampledTraces.Get(traceID); ok && sampled {
 					p.mSampledCacheHits.Add(ctx, 1)
@@ -254,6 +323,7 @@ func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Trace
 					traceDataItem.spans = append(traceDataItem.spans, span)
 					p.mu.Unlock()
 					continue
+>>>>>>> c57e54936b (Syncup for migration)
 				}
 				if unsampled, ok := p.unsampledTraces.Get(traceID); ok && unsampled {
 					p.mUnsampledCacheHits.Add(ctx, 1)

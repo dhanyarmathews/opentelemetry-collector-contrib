@@ -16,12 +16,30 @@ type TDigest struct {
 	count       float64
 }
 
-func NewTDigest(compression float64) *TDigest {
+/*func NewTDigest(compression float64) *TDigest {
 	return &TDigest{
 		compression: compression,
 		centroids:   []centroid{},
 		count:       0,
 	}
+}*/
+
+func NewTDigest(compression ...float64) *TDigest {
+    // Setting default compression to allow for no arguments
+    c := 100.0
+    if len(compression) > 0 {
+        c = compression[0]
+    }
+
+    return &TDigest{
+        compression: c,
+        centroids:   []centroid{},
+        count:       0,
+    }
+}
+
+func (t *TDigest) Count() float64 {
+    return t.count
 }
 
 func (t *TDigest) Add(value, w float64) {
