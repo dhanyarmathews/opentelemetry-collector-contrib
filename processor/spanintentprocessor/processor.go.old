@@ -363,12 +363,6 @@ func (tsp *tailSamplingSpanProcessor) samplingPolicyOnTick() {
 
 	batch, _ := tsp.decisionBatcher.CloseCurrentAndTakeFirstBatch()
 	batchLen := len(batch)
-	
-	traceIDs := make([]string, 0, len(batch))
-        for _, id := range batch {
-                traceIDs = append(traceIDs, id.String())
-        }
-        tsp.logger.Debug("[CHECK_FOR_DEBUG]:Trace IDs in batch", zap.Int("trace_count", len(traceIDs)),  zap.Strings("trace_ids", traceIDs))
 
 	for _, id := range batch {
 		d, ok := tsp.idToTrace.Load(id)

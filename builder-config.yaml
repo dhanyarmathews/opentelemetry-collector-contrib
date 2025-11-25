@@ -8,7 +8,7 @@ dist:
   name: otelcontribcol
   description: OpenTelemetry Collector binary for testbed only tests.
   version: 0.128.0-dev
-  output_path: ./otelcontribcol1
+  output_path: ./bin/otelcontribcol1
 
 extensions:
   - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.128.0
@@ -38,9 +38,7 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.128.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.128.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.128.0
-  - path: ../../processor/spanintentprocessor
-    gomod: ../../processor/spanintentprocessor/go.mod
-    #- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanintentprocessor v0.1.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanintentprocessor v0.128.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.128.0

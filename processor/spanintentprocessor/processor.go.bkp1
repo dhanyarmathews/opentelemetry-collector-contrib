@@ -1,0 +1,314 @@
+package spanintentprocessor
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"hash/fnv"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	//"go.opentelemetry.io/collector/translator/conventions"
+	"go.uber.org/zap"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanintentprocessor/cache"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanintentprocessor/internal/utility"
+)
+
+const defaultHashSalt = "default-hash-seed"
+
+type spanIntentProcessor struct {
+	logger *zap.Logger
+	cfg    *Config
+
+	// Mutex to protect trace buffer
+	mu sync.Mutex
+	// Buffered spans grouped by trace ID
+	traceDataBuffer map[pcommon.TraceID][]ptrace.Span
+
+	// Cache for sampled and unsampled trace decisions
+	sampledTraces   *cache.Cache[bool]
+	unsampledTraces *cache.Cache[bool]
+
+	// For stopping the tick loop
+	stopCh chan struct{}
+}
+
+type Option func(*spanIntentProcessor)
+
+func newSpanIntentProcessor(logger *zap.Logger, cfg *Config) (*spanIntentProcessor, error) {
+	sampledCache, err := cache.NewCache[bool](cfg.SampledTracesCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	unsampledCache, err := cache.NewCache[bool](cfg.UnsampledTracesCacheSize)
+	if err != nil {
+		return nil, err
+	}
+
+	return &spanIntentProcessor{
+		logger:          logger,
+		cfg:             cfg,
+		traceDataBuffer: make(map[pcommon.TraceID][]ptrace.Span),
+		sampledTraces:   sampledCache,
+		unsampledTraces: unsampledCache,
+		stopCh:          make(chan struct{}),
+	}, nil
+}
+
+func (p *spanIntentProcessor) Start(ctx context.Context, host component.Host) error {
+	go p.runTickLoop()
+	return nil
+}
+
+func (p *spanIntentProcessor) Shutdown(ctx context.Context) error {
+	close(p.stopCh)
+	return nil
+}
+
+func (p *spanIntentProcessor) runTickLoop() {
+	ticker := time.NewTicker(p.cfg.TickInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			p.processBufferedSpans()
+		case <-p.stopCh:
+			return
+		}
+	}
+}
+
+func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+	// Buffer spans grouped by trace ID
+	resourceSpans := td.ResourceSpans()
+	for i := 0; i < resourceSpans.Len(); i++ {
+		ils := resourceSpans.At(i).ScopeSpans()
+		for j := 0; j < ils.Len(); j++ {
+			spans := ils.At(j).Spans()
+			for k := 0; k < spans.Len(); k++ {
+				span := spans.At(k)
+				traceID := span.TraceID()
+				// Buffer span
+				p.mu.Lock()
+				p.traceDataBuffer[traceID] = append(p.traceDataBuffer[traceID], span)
+				p.mu.Unlock()
+			}
+		}
+	}
+	return td, nil
+}
+
+// processBufferedSpans is triggered periodically on tick_interval
+func (p *spanIntentProcessor) processBufferedSpans() {
+	// 1. Copy and reset buffer under lock
+	p.mu.Lock()
+	traceDataCopy := p.traceDataBuffer
+	p.traceDataBuffer = make(map[pcommon.TraceID][]ptrace.Span)
+	p.mu.Unlock()
+
+	if len(traceDataCopy) == 0 {
+		return
+	}
+
+	// 2. Early check for previous sampling decision
+	traceSpansMap := make(map[pcommon.TraceID][]ptrace.Span)
+	for traceID, spans := range traceDataCopy {
+		// **Check for previous sampling decision early before further processing**
+		if sampled, ok := p.sampledTraces.Get(traceID); ok && sampled {
+			// Trace has already been sampled, skip processing
+			continue
+		}
+		if unsampled, ok := p.unsampledTraces.Get(traceID); ok && unsampled {
+			// Trace has already been rejected, skip processing
+			continue
+		}
+
+		// If not sampled or rejected, add spans to the map for processing
+		traceSpansMap[traceID] = spans
+	}
+
+	if len(traceSpansMap) == 0 {
+		// No new traces to process after checking sampling decisions
+		return
+	}
+
+	// 3. Build TDigest for each operation (service_op) globally across all spans
+	tDigestMap := make(map[string]*utility.TDigest) // key: service_op string
+	for traceID, spans := range traceSpansMap {
+		for _, span := range spans {
+			serviceName := span.Resource().Attributes().Get(conventions.AttributeServiceName).StringVal()
+			if serviceName == "" {
+				serviceName = "unknown"
+			}
+			opName := span.Name()
+			key := fmt.Sprintf("%s_%s", serviceName, opName)
+			td, ok := tDigestMap[key]
+			if !ok {
+				td = utility.NewTDigest(100)
+				tDigestMap[key] = td
+			}
+			latency := float64(span.Duration()) / 1e6 // Default nanosec, latency in milliseconds
+			td.Add(latency, 1)
+		}
+	}
+
+	// 4. Classification and decision process
+	type category int
+	const (
+		Normal category = iota
+		Degraded
+		Failed
+	)
+
+	normalSet := make(map[pcommon.TraceID]struct{})
+	degradedSet := make(map[pcommon.TraceID]struct{})
+	failedSet := make(map[pcommon.TraceID]struct{})
+
+	classifyLatency := func(td *utility.TDigest, latency float64) category {
+		p25 := td.Quantile(0.25)
+		p90 := td.Quantile(0.90)
+		p95 := td.Quantile(0.95)
+		switch {
+		case latency > p95:
+			return Failed
+		case latency >= p90 && latency <= p95:
+			return Degraded
+		case latency < p25 && latency >= p90:
+			return Degraded
+		default:
+			return Normal
+		}
+	}
+
+	// 5. Classify each trace and make decisions
+	for traceID, spans := range traceSpansMap {
+		traceCategories := make(map[category]struct{})
+		for _, span := range spans {
+			serviceName := span.Resource().Attributes().Get(conventions.AttributeServiceName).StringVal()
+			if serviceName == "" {
+				serviceName = "unknown"
+			}
+			opName := span.Name()
+			key := fmt.Sprintf("%s_%s", serviceName, opName)
+			td := tDigestMap[key]
+			cat := classifyLatency(td, float64(span.Duration())/1e6)
+			traceCategories[cat] = struct{}{}
+		}
+
+		// Add traceID to all applicable sets
+		if _, ok := traceCategories[Failed]; ok {
+			failedSet[traceID] = struct{}{}
+		}
+		if _, ok := traceCategories[Degraded]; ok {
+			degradedSet[traceID] = struct{}{}
+		}
+		if _, ok := traceCategories[Normal]; ok {
+			normalSet[traceID] = struct{}{}
+		}
+	}
+
+	// 6. Remove duplicates from categories as per your rules
+	for tid := range failedSet {
+		delete(degradedSet, tid)
+		delete(normalSet, tid)
+	}
+	for tid := range degradedSet {
+		delete(normalSet, tid)
+	}
+
+	// 7. Now, build end-to-end trace graph hashes for each trace and group by category
+	catTraceHashes := map[category]map[string]pcommon.TraceID{
+		Normal:   {},
+		Degraded: {},
+		Failed:   {},
+	}
+
+	for cat, traceIDs := range map[category]map[pcommon.TraceID]struct{}{
+		Normal:   normalSet,
+		Degraded: degradedSet,
+		Failed:   failedSet,
+	} {
+		for tid := range traceIDs {
+			spans := traceSpansMap[tid]
+			hash, err := p.getTraceGraphHash(spans)
+			if err != nil {
+				p.logger.Warn("failed to get trace graph hash", zap.Error(err))
+				continue
+			}
+			catTraceHashes[cat][hash] = tid
+		}
+	}
+
+	// 8. Apply sampling bias and decide sampling using hash-based technique
+	for cat, traceHashToID := range catTraceHashes {
+		bias := 1.0
+		switch cat {
+		case Normal:
+			bias = p.cfg.SamplingBias.Normal
+		case Degraded:
+			bias = p.cfg.SamplingBias.Degraded
+		case Failed:
+			bias = p.cfg.SamplingBias.Failed
+		}
+
+		finalSamplingRate := p.cfg.SamplingPercentage * bias
+
+		for hash, tid := range traceHashToID {
+			// Hash-based sampling
+			hasher := fnv.New64a()
+			_, _ = hasher.Write([]byte(defaultHashSalt))
+			_, _ = hasher.Write([]byte(hash))
+			hashedValue := hasher.Sum64()
+
+			threshold := uint64(finalSamplingRate * float64(^uint64(0)))
+
+			if hashedValue <= threshold {
+				// Sample the trace
+				p.sampledTraces.Set(hash, true)
+			} else {
+				// Reject the trace
+				p.unsampledTraces.Set(hash, true)
+			}
+		}
+	}
+}
+
+// getTraceGraphHash generates a hash for the trace graph based on the trace spans.
+func (p *spanIntentProcessor) getTraceGraphHash(spans []ptrace.Span) (string, error) {
+	var builder strings.Builder
+	for _, span := range spans {
+		// Hash key for each span
+		builder.WriteString(span.Resource().Attributes().Get(conventions.AttributeServiceName).StringVal())
+		builder.WriteString(span.Name())
+		builder.WriteString(strconv.FormatInt(int64(span.StartTimestamp()), 10))
+		builder.WriteString(strconv.FormatInt(int64(span.EndTimestamp()), 10))
+	}
+
+	hash := sha256.Sum256([]byte(builder.String()))
+	return hex.EncodeToString(hash[:]), nil
+}
+
+func withRecordPolicy() Option {
+        return func(p *spanIntentProcessor) {
+                p.recordPolicy = true
+        }
+}
+
+//func (p *spanIntentProcessor) forwardTrace(traceID ptrace.TraceID, spans []ptrace.Span) {
+// Here, you would integrate with an exporter to forward the trace
+// For example, calling an OpenTelemetry Exporter or another backend.
+// Example:
+//	err := someExporter.ExportTraceData(context.Background(), traceID, spans)
+//	if err != nil {
+//		p.logger.Error("Failed to forward trace", zap.Error(err))
+//	}
+//}
+

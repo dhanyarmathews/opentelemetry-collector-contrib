@@ -1,0 +1,26 @@
+# Stage 1: Build the binary
+FROM golang:1.23 AS builder
+
+ENV CGO_ENABLED=0 \
+    GO111MODULE=on
+
+WORKDIR /otelcontrib
+
+COPY . .
+
+RUN go mod download
+
+RUN make otelcontribcol
+
+# Stage 2: Minimal runtime image
+FROM gcr.io/distroless/static-debian12:nonroot
+
+EXPOSE 9464
+EXPOSE 4317
+EXPOSE 4318
+
+COPY --from=builder /otelcontrib/bin/otelcontribcol_linux_amd64 /otelcontribcol
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/otelcontribcol"]

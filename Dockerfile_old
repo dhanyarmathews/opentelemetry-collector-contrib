@@ -1,0 +1,23 @@
+FROM golang:1.23 as builder
+
+ENV CGO_ENABLED=0 \
+    GO111MODULE=on \
+    PATH=$PATH:/go/bin
+
+
+WORKDIR /otelcontrib
+
+COPY . .
+
+RUN go mod download
+RUN make otelcontribcol || (echo "Build failed" && exit 1)
+
+RUN ls -alh /otelcontrib/bin
+
+FROM gcr.io/distroless/static:nonroot
+
+COPY --from=builder /otelcontrib/bin/otelcontribcol /otelcontribcol
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/otelcontribcol"]

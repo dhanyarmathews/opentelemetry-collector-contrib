@@ -1,0 +1,71 @@
+package spanintentprocessor
+
+import (
+    "fmt"
+    "time"
+
+    "go.opentelemetry.io/collector/component"
+)
+
+type SamplingBias struct {
+    Normal   float64 `mapstructure:"normal"`
+    Degraded float64 `mapstructure:"degraded"`
+    Failed   float64 `mapstructure:"failed"`
+}
+
+type Config struct {
+    component.Config `mapstructure:",squash"`
+
+    // SamplingPercentage is the base percentage of traces to sample (0.0 to 1.0)
+    SamplingPercentage float64 `mapstructure:"sampling_percentage"`
+
+    // SamplingBias controls the bias multipliers for different categories of traces
+    SamplingBias SamplingBias `mapstructure:"sampling_bias"`
+
+    // TickInterval controls how often sampling decisions are made
+    TickInterval time.Duration `mapstructure:"tick_interval"`
+
+    // Cache sizes for sampled and unsampled traces
+    SampledTracesCacheSize   int `mapstructure:"sampled_traces_cache_size"`
+    UnsampledTracesCacheSize int `mapstructure:"unsampled_traces_cache_size"`
+    //SampledTracesCacheSize   int           `mapstructure:"lru_sample_cache_size"`
+    //UnsampledTracesCacheSize int           `mapstructure:"lru_unsample_cache_size"`
+}
+
+// DefaultConfig returns the default configuration for the processor.
+func DefaultConfig() *Config {
+    return &Config{
+        SamplingPercentage:       0.3,
+        SamplingBias:             SamplingBias{Normal: 0.3, Degraded: 1.0, Failed: 1.0},
+        TickInterval:             30 * time.Second,
+        SampledTracesCacheSize:   10000,
+        UnsampledTracesCacheSize: 10000,
+    }
+}
+
+// Validate checks the configuration values for correctness.
+func (cfg *Config) Validate() error {
+    if cfg.SamplingPercentage < 0 || cfg.SamplingPercentage > 1 {
+        return fmt.Errorf("sampling_percentage must be between 0.0 and 1.0")
+    }
+    if cfg.SamplingBias.Normal < 0 || cfg.SamplingBias.Normal > 1 {
+        return fmt.Errorf("sampling_bias.normal must be between 0.0 and 1.0")
+    }
+    if cfg.SamplingBias.Degraded < 0 || cfg.SamplingBias.Degraded > 1 {
+        return fmt.Errorf("sampling_bias.degraded must be between 0.0 and 1.0")
+    }
+    if cfg.SamplingBias.Failed < 0 || cfg.SamplingBias.Failed > 1 {
+        return fmt.Errorf("sampling_bias.failed must be between 0.0 and 1.0")
+    }
+    if cfg.TickInterval <= 0 {
+        return fmt.Errorf("tick_interval must be positive")
+    }
+    if cfg.SampledTracesCacheSize <= 0 {
+        return fmt.Errorf("sampled_traces_cache_size must be positive")
+    }
+    if cfg.UnsampledTracesCacheSize <= 0 {
+        return fmt.Errorf("unsampled_traces_cache_size must be positive")
+    }
+    return nil
+}
+

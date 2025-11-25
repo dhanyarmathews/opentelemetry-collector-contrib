@@ -1,0 +1,1000 @@
+   42  kubectl edit deployment otel-collector -n otel-demo
+   43  kind load docker-image dhanyarmathews/otelcontribcol:latest --name kind-cluster
+   44  kubectl edit deployment otel-collector -n otel-demo
+   45  kubectl -n otel-demo rollout restart deployment otel-collector
+   46  kubectl get pods -n otel-demo -o wide
+   47  exit
+   48  cd IT-Automation-Testbed-main/
+   49  kubectl logs otel-collector-6656d8cbcc-92t4n -n otel-demo | grep Evaluating
+   50  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+   51  exit
+   52  kubectl port-forward svc/prometheus -n otel-demo --address localhost,9.59.150.225  9090:9090
+   53  exit
+   54  conda activate aws
+   55  kubectl get pods -n otel-demo
+   56  kubectl delete --namespace otel-demo -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
+   57  kubectl create --namespace otel-demo -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
+   58  kubectl get pods -n otel-demo
+   59  kubectl delete --namespace otel-demo -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
+   60  kubectl create --namespace otel-demo -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
+   61  kubectl get pods -n otel-demo
+   62  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+   63  cd IT-Automation-Testbed-main/
+   64  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+   65  exit
+   66  cd /data/opentelemetry-collector-contrib/
+   67  ls
+   68  vim processor/tailsamplingprocessor/internal/sampling/probabilistic.go 
+   69  cd processor/tailsamplingprocessor/
+   70  ls
+   71  cp processor.go processor.go.old
+   72  vim processor.go
+   73  pwd
+   74  cd ./../
+   75  cd ..
+   76  make otelcontribcol
+   77  ls
+   78  ls processor/tailsamplingprocessor/
+   79  cd processor/tailsamplingprocessor/
+   80  find . -iname "telemetry.go"
+   81  ls internal/
+   82  ls internal/telemetry/
+   83  vim internal/telemetry/featureflag.go 
+   84  vim internal/metadata/generated_telemetry.go
+   85  ls
+   86  vim internal/metadata/generated_telemetry.go 
+   87  make otelcontribcol
+   88  cd ../../
+   89  make otelcontribcol
+   90  vim processor/tailsamplingprocessor/processor.go
+   91  make otelcontribcol
+   92  vim processor/tailsamplingprocessor/processor.go
+   93  make otelcontribcol
+   94  vim processor/tailsamplingprocessor/processor.go
+   95  make otelcontribcol
+   96  exit
+   97  cd /data/opentelemetry-collector-contrib/
+   98  cp processor/tailsamplingprocessor/processor.go.old processor/tailsamplingprocessor/processor.go
+   99  vim processor/tailsamplingprocessor/processor.go
+  100  vim internal/metadata/generated_telemetry.go 
+  101  vim processor/tailsamplingprocessor/internal/metadata/generated_telemetry
+  102  vim processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go 
+  103  make otelcontribcol
+  104  vim processor/tailsamplingprocessor/processor.go
+  105  make otelcontribcol
+  106  vim processor/tailsamplingprocessor/processor.go
+  107  make otelcontribcol
+  108  vim processor/tailsamplingprocessor/processor.go
+  109  make otelcontribcol
+  110  vim Dockerfile
+  111  ls -lrt
+  112  ls -lrt bin
+  113  date
+  114  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  115  ls -lrt bin
+  116  ls -lrt
+  117  vim Dockerfile
+  118  docker build -t dhanyarmathews/otelcontribcol:latest .
+  119  docker push dhanyarmathews/otelcontribcol:latest
+  120  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  121  make otelcontribcol
+  122  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  123  make otelcontribcol
+  124  ls -lrt bin/
+  125  dat
+  126  date
+  127  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  128  docker build -t dhanyarmathews/otelcontribcol:latest .
+  129  vim processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go 
+  130  docker push dhanyarmathews/otelcontribcol:latest
+  131  vim processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go 
+  132  vim processor/tailsamplingprocessor/processor.go
+  133  make otelcontribcol
+  134  vim processor/tailsamplingprocessor/processor.go
+  135  make otelcontribcol
+  136  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  137  docker build -t dhanyarmathews/otelcontribcol:latest .
+  138  docker push dhanyarmathews/otelcontribcol:latest
+  139  exit
+  140  conda activate aws
+  141  cd IT-Automation-Testbed-main/
+  142  df -kh .
+  143  df -kh /data
+  144  kubectl get pods -n -otel-demo -o wide
+  145  kubectl get pods -n otel-demo -o wide
+  146  kubectl logs prometheus-5768dc7876-6q72f -n otel-demo
+  147  kubectl get deployment otel-collector -n otel-demo -o yaml
+  148  kubectl edit deployment otel-collector -n otel-demo -o yaml
+  149  kubectl get deployment otel-collector -n otel-demo -o yaml > ~/sample_deployment.yaml
+  150  kubectl get configmap otel-collector -n otel-demo -o yaml > ~/sample_configmap.yaml
+  151  kubectl -n otel-demo rollout restart deployment otel-collector
+  152  kubectl -n otel-demo rollout restart deployment prometheus
+  153  kubectl get pods -n otel-demo -o wide
+  154  kubectl desc prometheus-6ffbdcc49f-kl4jf -n otel-demo
+  155  kubectl describe prometheus-6ffbdcc49f-kl4jf -n otel-demo
+  156  kubectl describe pod prometheus-6ffbdcc49f-kl4jf -n otel-demo
+  157  kubectl events prometheus-6ffbdcc49f-kl4jf -n otel-demo
+  158  kubectl logs prometheus-6ffbdcc49f-kl4jf -n otel-demo
+  159  kubectl get pods -n otel-demo -o wide
+  160  kubectl logs otel-collector-7bd5488d57-7dkd9 -n otel-demo
+  161  kubectl logs otel-collector-7bd5488d57-7dkd9 -n otel-demo | grep CHECK
+  162  kubectl get pods -n otel-demo -o wide
+  163  kubectl edit configmap otel-collector -n otel-demo
+  164  kubectl -n otel-demo rollout restart deployment prometheus
+  165  kubectl -n otel-demo rollout restart deployment otel-collector
+  166  kubectl get pods -n otel-demo -o wide
+  167  kubectl logs otel-collector-544df55795-h8kzp -n otel-demo > check_logs
+  168  vim check_logs
+  169  kubectl get pods -n otel-demo -o wide
+  170  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  171  kubectl delete --namespace otel-demo -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
+  172  kind load docker-image dhanyarmathews/otelcontribcol:latest --name kind-cluster
+  173  make install_observability_stack
+  174  make install_opentelemetry_astronomy_shop
+  175  kubectl get pods -n otel-demo
+  176  make uninstall_opentelemetry_astronomy_shop
+  177  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  178  make install_opentelemetry_astronomy_shop
+  179  kubectl get pods -n otel-demo -o wide
+  180  kubectl get svc --all-namespaces 
+  181  make uninstall_opentelemetry_astronomy_shop
+  182  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  183  make install_opentelemetry_astronomy_shop
+  184  kubectl get pods -n otel-demo -o wide
+  185  kubectl logs otelcol-7fbb87d6b4-92f7h -n otel-demo > checklogs
+  186  vim checklogs 
+  187  kubectl get pods -n otel-demo -o wide
+  188  make uninstall_opentelemetry_astronomy_shop
+  189  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  190  make install_opentelemetry_astronomy_shop
+  191  kubectl get pods -n otel-demo -o wide
+  192  kubectl logs otelcol-7fbb87d6b4-8m6kv -n otel-demo > checklogs
+  193  kubectl logs otelcol-7fbb87d6b4-sm6kv otelcol-7fbb87d6b4-sm6kv
+  194  kubectl logs otelcol-7fbb87d6b4-sm6kv -n otel-demo > checklogs
+  195  vim checklogs
+  196  kubectl logs otelcol-7fbb87d6b4-sm6kv -n otel-demo > checklogs
+  197  vim checklogs
+  198  kubectl logs otelcol-7fbb87d6b4-sm6kv -n otel-demo > checklogs
+  199  vim checklogs
+  200  make uninstall_opentelemetry_astronomy_shop
+  201  make install_opentelemetry_astronomy_shop
+  202  kubectl get pods -n otel-demo -o wide
+  203  kubectl logs otelcol-7fbb87d6b4-vswtr -n otel-demo > checklogs
+  204  vim checklogs
+  205  kubectl edit deployment loadgenerator-7d7f9cf9bc-6lcwt -n otel-demo
+  206  kubectl get deloyments -n otel-demo
+  207  kubectl get deloyment -n otel-demo
+  208  kubectl get deployments -n otel-demo
+  209  kubectl eit configmap loadgenerator -n otel-demo
+  210  kubectl edit configmap loadgenerator -n otel-demo
+  211  kubectl edit deployment loadgenerator -n otel-demo
+  212  kubectl edit configmap loadgenerator -n otel-demo
+  213  kubectl edit deployment loadgenerator -n otel-demo
+  214  kubectl -n otel-demo rollout restart deployment loadgenerator
+  215  kubectl edit configmap otel-collector -n otel-demo
+  216  kubectl edit configmap otelcol -n otel-demo
+  217  kubectl -n otel-demo rollout restart deployment otelcol
+  218  kubectl get pods -n otel-demo -o wide
+  219  kubectl logs otelcol-bf6865dcb-624jf -n otel-demo
+  220  kubectl edit configmap otelcol -n otel-demo
+  221  kubectl -n otel-demo rollout restart deployment otelcol
+  222  kubectl get pods -n otel-demo -o wide
+  223  kubectl edit configmap otelcol -n otel-demo
+  224  exit
+  225  kubectl port-forward svc/prometheus -n otel-demo --address localhost,9.59.150.225  9090:9090
+  226  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  227  cd IT-Automation-Testbed-main/
+  228  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  229  vim ~/sample_configmap.yaml 
+  230  kubectl port-forward svc/prometheus -n otel-demo --address localhost,9.59.150.225  9090:9090
+  231  kubectl port-forward svc/prometheus-operated -n otel-demo --address localhost,9.59.150.225  9090:9090
+  232  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  233  exit
+  234  vim sample_configmap.yaml 
+  235  cd /data/opentelemetry-collector-contrib/
+  236  vim processor/tailsamplingprocessor/processor.go
+  237  vim processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go 
+  238  make otelcontribcol
+  239  vim processor/tailsamplingprocessor/processor.go
+  240  vim processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go 
+  241  vim processor/tailsamplingprocessor/processor.go
+  242  vim processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go 
+  243  make otelcontribcol
+  244  vim processor/tailsamplingprocessor/processor.go
+  245  make otelcontribcol
+  246  docker build -t dhanyarmathews/otelcontribcol:latest .
+  247  vim Dockerfile
+  248  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  249  docker build -t dhanyarmathews/otelcontribcol:latest .
+  250  docker push dhanyarmathews/otelcontribcol:latest
+  251  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic_test.go 
+  252  cd processor/tailsamplingprocessor/internal/sampling/
+  253  go test -v -run stratified_probabilistic_test.go
+  254  vim stratified_probabilistic_test.go 
+  255  go test -v -run TestStratifiedProbabilisticSampling
+  256  vim stratified_probabilistic_test.go 
+  257  cd -
+  258  vim processor/tailsamplingprocessor/processor.go
+  259  make otelcontribcol
+  260  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  261  docker build -t dhanyarmathews/otelcontribcol:latest .
+  262  docker push dhanyarmathews/otelcontribcol:latest
+  263  vim processor/tailsamplingprocessor/processor.go
+  264  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  265  make otelcontribcol
+  266  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  267  make otelcontribcol
+  268  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  269  make otelcontribcol
+  270  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  271  make otelcontribcol
+  272  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  273  docker build -t dhanyarmathews/otelcontribcol:latest .
+  274  docker push dhanyarmathews/otelcontribcol:latest
+  275  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  276  make otelcontribcol
+  277  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  278  docker build -t dhanyarmathews/otelcontribcol:latest .
+  279  docker push dhanyarmathews/otelcontribcol:latest
+  280  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  281  cd /data/opentelemetry-collector-contrib/
+  282  vim processor/tailsamplingprocessor/processor.go
+  283  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  284  df -kh /
+  285  df -kh /data
+  286  conda activate aws
+  287  cd IT-Automation-Testbed-main/
+  288  kubectl get pods -n otel-demo -o wide
+  289  vim checklogs
+  290  make uninstall_opentelemetry_astronomy_shop
+  291  make install_opentelemetry_astronomy_shop
+  292  kubectl get pods -n otel-demo -o wide
+  293  kubectl get deployment loadgenerator -n otel-demo
+  294  kubectl get deployment loadgenerator -n otel-demo -o yaml
+  295  kubectl get pods -n otel-demo -o wide
+  296  kubectl logs otelcol-7fbb87d6b4-xqczx -n otel-demo > checklogs
+  297  vim checklogs 
+  298  make uninstall_opentelemetry_astronomy_shop
+  299  make install_opentelemetry_astronomy_shop
+  300  kubectl get pods -n otel-demo -o wide
+  301  kubectl logs otelcol-7fbb87d6b4-x9v6w -n otel-demo > checklogs
+  302  vim checklogs
+  303  kubectl logs otelcol-7fbb87d6b4-x9v6w -n otel-demo > checklogs
+  304  vim checklogs
+  305  make uninstall_opentelemetry_astronomy_shop
+  306  make install_opentelemetry_astronomy_shop
+  307  kubectl get pods -n otel-demo -o wide
+  308  kubectl logs otelcol-7fbb87d6b4-tv72g -n otel-demo > checklogs
+  309  vim checklogs
+  310  kubectl logs otelcol-7fbb87d6b4-tv72g -n otel-demo > checklogs
+  311  vim checklogs
+  312  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  313  make uninstall_opentelemetry_astronomy_shop
+  314  cp roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_torestore.yaml
+  315  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  316  make install_opentelemetry_astronomy_shop
+  317  ls
+  318  vim Makefile 
+  319  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  320  pwd
+  321  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  322  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml
+  323  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.
+  324  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yam
+  325  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  326  make install_opentelemetry_astronomy_shop
+  327  make uninstall_opentelemetry_astronomy_shop
+  328  make install_opentelemetry_astronomy_shop
+  329  ls
+  330  ls roles/sample_applications/opentelemetry-helm-charts/
+  331  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.schema.json
+  332  make uninstall_opentelemetry_astronomy_shop
+  333  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  334  make install_opentelemetry_astronomy_shop
+  335  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  336  make uninstall_opentelemetry_astronomy_shop
+  337  make install_opentelemetry_astronomy_shop
+  338  helm template
+  339  kubectl get pods -n otel-demo -o wide
+  340  kubectl logs otelcol-a-76c849cc7-7k59f -n otel-demo
+  341  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  342  make uninstall_opentelemetry_astronomy_shop
+  343  make install_opentelemetry_astronomy_shop
+  344  kubectl get pods -n otel-demo -o wide
+  345  kubectl logs otelcol-a-7bf4dfbb85-7hzzc -n otel-demo
+  346  :q
+  347  kubectl get pods -n otel-demo -o wide
+  348  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_a.yaml
+  349  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml
+  350  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f values-b.yaml
+  351  kubectl get pods -n otel-demo -o wide
+  352  helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+  353  helm repo update
+  354  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f values-b.yaml
+  355  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml
+  356  kubectl get pods -n otel-demo -o wide
+  357  helm upgrade --remove otelcol-b open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml
+  358  helm upgrade --help
+  359  helm upgrade --uninstall otelcol-b
+  360  helm uninstall otelcol-b
+  361  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml -n otel-demo
+  362  kubectl get pods -n otel-demo -o wide
+  363  cp roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_c.yaml
+  364  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_c.yaml
+  365  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_c.yaml -n otel-demo
+  366  kubectl get pods -n otel-demo -o wide
+  367  helm uninstall otelcol-b
+  368  helm uninstall otelcol-c
+  369  kubectl get pods -n otel-demo -o wide
+  370  helm uninstall otelcol-b
+  371  helm uninstall otelcol-b -n otel-demo
+  372  helm uninstall otelcol-c -n otel-demo
+  373  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml -n otel-demo
+  374  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_c.yaml -n otel-demo
+  375  kubectl get pods -n otel-demo -o wide
+  376  kubectl logs otelcol-c-85d978fc69-kbkvw -n otel-demo > checklogsc
+  377  vim checklogsc 
+  378  kubectl logs otelcol-c-85d978fc69-kbkvw -n otel-demo > checklogsc
+  379  vim checklogsc 
+  380  kubectl logs otelcol-b-6bbf5f49f8-8gngv -n otel-demo > checklogsb
+  381  vim checklogsb
+  382  kubectl exec -it otelcol-a-7bf4dfbb85-7hzzc -n otel-demo -- curl http://otelcol-b:4317
+  383  kubectl describe svc otelcol-b
+  384  kubectl describe svc otelcol-b -n otel-demo
+  385  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml 
+  386  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml 
+  387  helm uninstall otelcol-c -n otel-demo
+  388  helm uninstall otelcol-b -n otel-demo
+  389  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml 
+  390  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml 
+  391  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml -n otel-demo
+  392  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_c.yaml -n otel-demo
+  393  kubectl get pods -n otel-demo -o wide
+  394  kubectl logs otelcol-c-85d978fc69-ldb7v -n otel-demo > checklogsc
+  395  vim checklogsc 
+  396  kubectl logs otelcol-c-85d978fc69-ldb7v -n otel-demo > checklogsc
+  397  vim checklogsc 
+  398  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml 
+  399  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml 
+  400  helm uninstall otelcol-c -n otel-demo
+  401  helm uninstall otelcol-b -n otel-demo
+  402  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml -n otel-demo
+  403  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_c.yaml -n otel-demo
+  404  kubectl get pods -n otel-demo -o wide
+  405  kubectl logs otelcol-c-85d978fc69-7gp2m -n otel-demo > checklogsc
+  406  vim checklogsc
+  407  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml 
+  408  helm uninstall otelcol-b -n otel-demo
+  409  helm uninstall otelcol-c -n otel-demo
+  410  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml 
+  411  cp roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml.bkup
+  412  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml 
+  413  cp roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  414  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  415  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml -n otel-demo
+  416  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_c.yaml -n otel-demo
+  417  kubectl get pods -n otel-demo -o wide
+  418  kubectl logs otelcol-c-85d978fc69-2fw4j -n otel-demo > checklogsc
+  419  vim checklogsc
+  420  kubectl logs otelcol-c-85d978fc69-2fw4j -n otel-demo > checklogsc
+  421  vim checklogsc
+  422  kubectl edit deployment loadgenerator -n otel-demo
+  423  kubectl logs otelcol-c-85d978fc69-2fw4j -n otel-demo > checklogsc
+  424  vim checklogsc
+  425  kubectl logs otelcol-a-7bf4dfbb85-7hzzc -n otel-demo > checklogsa
+  426  vim checklogsa
+  427  kubectl -n otel-demo rollout restart deployment otelcol-a
+  428  kubectl logs otelcol-c-85d978fc69-2fw4j -n otel-demo > checklogsc
+  429  vim checklogsc
+  430  kubectl get pods -n otel-demo -o wide
+  431  kubectl logs otelcol-a-d587cbb6c-fmw7n -n otel-demo > checklogsa
+  432  vim checklogsa
+  433  kubectl logs otelcol-c-85d978fc69-2fw4j -n otel-demo > checklogsc
+  434  vim checklogsc
+  435  kubectl logs otelcol-a-d587cbb6c-fmw7n -n otel-demo > checklogsa
+  436  vim checklogsa
+  437  kubectl get pods -l app.kubernetes.io/instance=otelcol-b
+  438  kubectl get pods -l app.kubernetes.io/instance=otelcol-b -n otel-demo
+  439  vim checklogsa
+  440  exit
+  441  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  442  exit
+  443  cd /data/opentelemetry-collector-contrib/
+  444  cp processor/tailsamplingprocessor/processor.go processor/tailsamplingprocessor/processor_all_sp_enabled.go
+  445  ls processor/tailsamplingprocessor/ | grep processor
+  446  cp processor/tailsamplingprocessor/processor.go.old processor/tailsamplingprocessor/processor.go
+  447  vm processor/tailsamplingprocessor/processor.go
+  448  vim processor/tailsamplingprocessor/processor.go
+  449  vim processor/tailsamplingprocessor/processor_all_sp_enabled.go 
+  450  vim processor/tailsamplingprocessor/processor.go
+  451  make otelcontribcol
+  452  mv processor/tailsamplingprocessor/processor_all_sp_enabled.go  processor/tailsamplingprocessor/processor_all_sp_enabled.go.old
+  453  make otelcontribcol
+  454  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  455  docker build -t dhanyarmathews/otelcontribcol:latest .
+  456  docker push dhanyarmathews/otelcontribcol:latest
+  457  conda activate aws
+  458  cd IT-Automation-Testbed-main/
+  459  kubectl get pods -n otel-demo
+  460  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml 
+  461  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_torestore.yaml 
+  462  kubectl logs otelcol-a-d587cbb6c-fmw7n -n otel-demo > checklogsa
+  463  vim checklogsa 
+  464  kubectl get pods -n otel-demo -o wide
+  465  kubectl logs otelcol-a-d587cbb6c-fmw7n -n otel-demo > checklogsa
+  466  vim checklogsa 
+  467  kubectl edit config otelcol-a -n otel-demo
+  468  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  469  vim checklogsa 
+  470  kubectl edit config otelcol-a -n otel-demo
+  471  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  472  kubectl -n otel-demo rollout restart deployment otelcol-a
+  473  kubectl get pods -n otel-demo -o wide
+  474  kubectl logs otelcol-a-674c64f679-r7mwz -n otel-demo > checklogsa
+  475  vim checklogsa
+  476  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  477  kubectl -n otel-demo rollout restart deployment otelcol-a
+  478  kubectl get pods -n otel-demo -o wide
+  479  kubectl logs otelcol-a-74dbfd74d6-zsjvq -n otel-demo > checklogsa
+  480  vim checklogsa 
+  481  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  482  kubectl -n otel-demo rollout restart deployment otelcol-a
+  483  kubectl get pods -n otel-demo -o wide
+  484  kubectl logs otelcol-a-6ddc94cc4f-mzxc6 -n otel-demo > checklogsa
+  485  vim checklogsa
+  486  kubectl logs otelcol-c-85d978fc69-2fw4j -n otel-demo > checklogsc
+  487  vim checklogsc
+  488  curl -v http://10.244.2.168:4318/v1/traces
+  489  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  490  kubectl -n otel-demo rollout restart deployment otelcol-a
+  491  kubectl get pods -n otel-demo -o wide
+  492  kubectl logs otelcol-a-5f77b6bc6d-xsbs5 -n otel-demo
+  493  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  494  kubectl -n otel-demo rollout restart deployment otelcol-a
+  495  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  496  make uninstall_opentelemetry_astronomy_shop
+  497  make install_opentelemetry_astronomy_shop
+  498  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml -n otel-demo
+  499  cp roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  500  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  501  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  502  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  503  kubectl get pods -n otel-demo -o wide
+  504  kubectl logs otelcol-c-6d848b4d8f-hpwkn -n otel-demo
+  505  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  506  helm uninstall otelcol-c -n otel-demo
+  507  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  508  helm uninstall otelcol-c -n otel-demo
+  509  helm uninstall otelcol-c
+  510  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  511  kubectl get pods -n otel-demo -o wide
+  512  kubectl logs otelcol-c-68fff679cc-82z5p -n otel-demo
+  513  helm uninstall otelcol-c
+  514  helm uninstall otelcol-c -n otel-demo
+  515  cp roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  516  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  517  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  518  kubectl get pods -n otel-demo -o wide
+  519  kubectl logs otelcol-c-9d864c4b8-hrhn2 -n otel-demo
+  520  vim  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml
+  521  helm uninstall otelcol-c -n otel-demo
+  522  vim  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  523  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  524  kubectl get pods -n otel-demo -o wide
+  525  kubectl logs otelcol-c-6969899f9d-678tn -n otel-demo
+  526  helm uninstall otelcol-c -n otel-demo
+  527  vim  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  528  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  529  kubectl get pods -n otel-demo -o wide
+  530  kubectl logs otelcol-a-7bf4dfbb85-c2nbf -n otel-demo > checklogsa
+  531  vim checklogsa 
+  532  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  533  kubectl -n otel-demo rollout restart deployment otelcol-a
+  534  kubectl get pods -n otel-demo -o wide
+  535  kubectl logs otelcol-a-59c4ffcc78-ttlkf -n otel-demo > checklogsa
+  536  vim cehcklogsa
+  537  vim checklogsa
+  538  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  539  kubectl -n otel-demo rollout restart deployment otelcol-a
+  540  kubectl get pods -n otel-demo -o wide
+  541  kubectl logs otelcol-a-57675c997b-ljbwd -n otel-demo > checklogsa
+  542  vim checklogsa
+  543  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  544  kubectl -n otel-demo rollout restart deployment otelcol-a
+  545  kubectl get pods -n otel-demo -o wide
+  546  kubectl logs otelcol-a-64447c7b65-vthlx -n otel-demo > checklogsa
+  547  vim checklogsa
+  548  kubectl get pods -n otel-demo -o wide
+  549  kubectl logs otelcol-b-6bbf5f49f8-t7twq -n otel-demo  > checklogsb
+  550  vim checklogsb
+  551  kubectl logs otelcol-a-64447c7b65-vthlx -n otel-demo > checklogsa
+  552  vim checklogsa
+  553  kubectl edit configmap otelcol-a -n otel-demo -o yaml
+  554  exit
+  555  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml 
+  556  cd IT-Automation-Testbed-main/
+  557  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml 
+  558  make uninstall_opentelemetry_astronomy_shop
+  559  helm uninstall otelcol-c -n otel-demo
+  560  helm uninstall otelcol-d -n otel-demo
+  561  helm uninstall otelcol-b -n otel-demo
+  562  conda activate as
+  563  conda activate aws
+  564  make uninstall_opentelemetry_astronomy_shop
+  565  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml 
+  566  make install_opentelemetry_astronomy_shop
+  567  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  568  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  569  kubectl get pods -n otel-demo -o wide
+  570  kubectl logs otelcol-a-7bf4dfbb85-69bn9 -n otel-demo > checklogsa
+  571  vim checklogsa
+  572  kubectl logs otelcol-c-6b6f78f497-fdkmg -n otel-demo > checklogsb
+  573  vim checklogsb
+  574  exit
+  575  conda activate aws
+  576  cd IT-Automation-Testbed-main/
+  577  kubectl get pods -n otel-demo -o wide
+  578  kubectl logs otelcol-b-5859cf77d5-2kjpv  -n otel-demo
+  579  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  580  kubectl -n otel-demo rollout restart deployment otelcol-b
+  581  kubectl get pods -n otel-demo -o wide
+  582  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  583  helm uninstall otelcol-b -n otel-demo
+  584  helm uninstall otelcol-c -n otel-demo
+  585  make uninstall_opentelemetry_astronomy_shop
+  586  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml 
+  587  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml 
+  588  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_c.yaml 
+  589  make install_opentelemetry_astronomy_shop
+  590  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  591  kubectl get pods -n otel-demo -o wide
+  592  kubectl logs otelcol-b-5859cf77d5-twnfm -n otel-demo
+  593  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml 
+  594  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  595  kubectl -n otel-demo rollout restart deployment otelcol-b
+  596  kubectl get pods -n otel-demo -o wide
+  597  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_c.yaml 
+  598  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  599  kubectl get pods -n otel-demo -o wide
+  600  kubectl logs otelcol-b-6b54d7b97b-mj4np -n otel-demo > checklogsb
+  601  vim checklogsb
+  602  kubectl edit configmap otelcol-c-6b6f78f497-2g4cs -n otel-demo -o yaml
+  603  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  604  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  605  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  606  kubectl -n otel-demo rollout restart deployment otelcol-c
+  607  kubectl get pods -n otel-demo -o wide
+  608  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  609  kubectl logs otelcol-c-75b467cb6b-mps6r -n otel-demo > checklogsc
+  610  vim checklogsc
+  611  helm uninstall otelcol-c -n otel-demo
+  612  helm uninstall otelcol-b -n otel-demo
+  613  make uninstall_opentelemetry_astronomy_shop
+  614  cd /data/opentelemetry-collector-contrib/
+  615  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  616  vim processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go 
+  617  cp processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go.changes
+  618  vim processor/tailsamplingprocessor/internal/metadata/generated_telemetry.go 
+  619  make otelcontribcol
+  620  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  621  docker build -t dhanyarmathews/otelcontribcol:latest .
+  622  docker push dhanyarmathews/otelcontribcol:latest
+  623  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  624  kubectl get dvc -n otel-demo
+  625  kubectl get svc -n otel-demo
+  626  kubectl --namespace otel-demo port-forward svc/frontendproxy 8080:8080 --address localhost,9.59.150.225 
+  627  cd IT-Automation-Testbed-main/
+  628  ls
+  629  ls /home/tvm
+  630  vim /home/tvm/hist_initial 
+  631  conda activate aws
+  632  cd IT-Automation-Testbed-main/
+  633  kubectl get pods -n otel-demo -o wide
+  634  make install_opentelemetry_astronomy_shop
+  635  kubectl get pods -n otel-demo -o wide
+  636  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml
+  637  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  638  kubectl get pods -n otel-demo -o wide
+  639  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  640  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml
+  641  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  642  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  643  helm uninstall otelcol-c
+  644  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  645  kubectl get pods -n otel-demo -o wide
+  646  kubectl logs otelcol-c-95d96d4d9-qnsvd -n otel-demo
+  647  helm uninstall otelcol-c
+  648  helm uninstall otelcol-c -n otel-demo
+  649  helm uninstall otelcol-b -n otel-demo
+  650  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml
+  651  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  652  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  653  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  654  kubectl get pods -n otel-demo -o wide
+  655  kubectl logs otelcol-b-6f9cbfd5cb-vm5vk -n otel-demo
+  656  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml
+  657  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-bc.yaml
+  658  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  659  helm uninstall otelcol-b -n otel-demo
+  660  helm uninstall otelcol-c -n otel-demo
+  661  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  662  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  663  kubectl get pods -n otel-demo -o wide
+  664  kubectl logs  otelcol-c-74b98ffb6d-l8l2b -n otel-demo > checklogsc
+  665  vim checklogsc
+  666  kubectl logs otelcol-b-7568bd99b4-82xct -n otel-demo > checklogsb
+  667  vim checklogsb
+  668  kubectl edit deployment loadgenerator -n otel-demo -o yaml
+  669  kubectl -n otel-demo rollout restart deployment loadgenerator
+  670  kubectl logs  otelcol-c-74b98ffb6d-l8l2b -n otel-demo > checklogsc
+  671  vim checklogsc
+  672  kubectl get pods -n otel-demo -o wide
+  673  kubectl logs otelcol-c-74b98ffb6d-l8l2b -n otel-demo > checklogsc
+  674  vim checklogsc
+  675  kubectl logs otelcol-b-7568bd99b4-82xct -n otel-demo > checklogsb
+  676  vim checklogsb
+  677  helm uninstall otelcol-b -n otel-demo
+  678  helm uninstall otelcol-c -n otel-demo
+  679  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  680  kubectl get pods -n otel-demo -o wide
+  681  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  682  kubectl get pods -n otel-demo -o wide
+  683  kubectl logs otelcol-b-7568bd99b4-ntfwm -n otel-demo
+  684  kubectl logs otelcol-b-7568bd99b4-ntfwm -n otel-demo > checklogsb
+  685  vim checklogsb
+  686  kubectl get pods -n otel-demo -o wide
+  687  kubectl events otelcol-c-74b98ffb6d-mrzh9 -n otel-demo
+  688  kubectl get pods -n otel-demo -o wide
+  689  kubectl edit deployment otelcol-b-7568bd99b4-ntfwm -n otel-demo -o yaml
+  690  kubectl edit deployment otelcol-b -n otel-demo -o yaml
+  691  vim checklogsb
+  692  kubectl edit deployment otelcol-b -n otel-demo -o yaml
+  693  kubectl get pods -n otel-demo -o wide
+  694  kubectl edit deployment loadgenerator -n otel-demo -o yaml
+  695  kubectl -n otel-demo rollout restart deployment loadgenerator
+  696  kubectl get pods -n otel-demo -o wide
+  697  helm uninstall otelcol-c -n otel-demo
+  698  helm uninstall otelcol-b -n otel-demo
+  699  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  700  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  701  kubectl get pods -n otel-demo -o wide
+  702  helm uninstall otelcol-b -n otel-demo
+  703  helm uninstall otelcol-c -n otel-demo
+  704  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml
+  705  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  706  kubectl get pods -n otel-demo -o wide
+  707  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  708  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  709  kubectl get pods -n otel-demo -o wide
+  710  kubectl get configmap otelcol-b-5588c4fcb6-xc5w6 -n otel-demo -o yaml
+  711  kubectl get configmap otelcol-b -n otel-demo -o yaml
+  712  kubectl get configmap otelcol-c -n otel-demo -o yaml
+  713  kubectl get pods -n otel-demo -o wide
+  714  vim checklogsc
+  715  kubectl get pods -n otel-demo -o wide
+  716  kubectl describe pod otelcol-c-85d978fc69-z8zqd -n otel-demo
+  717  kubectl logs otelcol-c-85d978fc69-z8zqd -n otel-demo --previous
+  718  kubectl get pod otelcol-c-85d978fc69-z8zqd -n otel-demo -o jsonpath="{.spec.containers[*].name}"
+  719  kubectl logs otelcol-c-85d978fc69-z8zqd -n otel-demo -c opentelemetry-collector  --previous
+  720  kubectl get pods -n otel-demo -o wide
+  721  kubectl describe otelcol-c-85d978fc69-z8zqd -n otel-demo -c opentelemetry-collector
+  722  kubectl describe otelcol-c-85d978fc69-z8zqd -n otel-demo 
+  723  kubectl get pods -n otel-demo -o wide
+  724  kubectl describe pod otelcol-c-85d978fc69-z8zqd -n otel-demo 
+  725  kubectl get pods -n otel-demo -o wide
+  726  kubectl describe pod otelcol-c-85d978fc69-z8zqd -n otel-demo
+  727  kubectl logs otelcol-c-85d978fc69-z8zqd -n otel-demo > checklogsc
+  728  vim checklogsc
+  729  kubectl get pods -n otel-demo -o wide
+  730  kubectl describe pod otelcol-b-5588c4fcb6-xc5w6 -n otel-demo
+  731  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  732  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  733  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml
+  734  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  735  kubectl top pod otelcol-b-5588c4fcb6-xc5w6 -n otel-demo
+  736  helm uninstall otelcol-b -n otel-demo
+  737  helm uninstall otelcol-c -n otel-demo
+  738  make uninstall_opentelemetry_astronomy_shop
+  739  make install_opentelemetry_astronomy_shop
+  740  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml
+  741  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml
+  742  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  743  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  744  kubectl get pods -n otel-demo -o wide
+  745  kubectl logs otelcol-b-684864795-fj9lh -n otel-demo > checklogsb
+  746  vim checklogsb
+  747  kubectl logs otelcol-c-6dbcb458c7-6c5d -n otel-demo > checklogsc
+  748  kubectl get pods -n otel-demo -o wide
+  749  kubectl logs otelcol-c-6dbcb458c7-6c5dx -n otel-demo > checklogsc
+  750  vim checklogsc
+  751  kubectl edit deployment loadgenerator -n otel-demo -o yaml
+  752  kubectl -n otel-demo rollout restart deployment loadgenerator
+  753  kubectl get pods -n otel-demo -o wide
+  754  kubectl describe pod otelcol-c-6dbcb458c7-6c5dx -n otel-demo
+  755  kubectl get pods -n otel-demo -o wide
+  756  kubectl logs otelcol-c-6dbcb458c7-6c5dx -n otel-demo > checklogsc
+  757  vim checklogsc
+  758  kubectl get pods -n otel-demo -o wide
+  759  kubectl edit configmap otelcol-b-684864795-fj9lh -n otel-demo -o yaml
+  760  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  761  kubectl edit deployment otelcol-b -n otel-demo -o yaml
+  762  kubectl edit deployment otelcol-c -n otel-demo -o yaml
+  763  kubectl -n otel-demo rollout restart deployment otelcol-b
+  764  kubectl -n otel-demo rollout restart deployment otelcol-c
+  765  kubectl get pods -n otel-demo -o wide
+  766  kubectl logs otelcol-b-5b6b498594-m8ws6 -n otel-demo > checklogsb
+  767  vim checklogsb
+  768  kubectl get pods -n otel-demo -o wide
+  769  kubectl describe pod otelcol-c-78677c8d9c-8hvvr -n otel-demo
+  770  kubectl get pods -n otel-demo -o wide
+  771  kubectl describe pod otelcol-c-78677c8d9c-8hvvr -n otel-demo
+  772  kubectl get pods -n otel-demo -o wide
+  773  vim checklogsc
+  774  kubectl get pods -n otel-demo -o wide
+  775  kubectl edit deployment otelcol-b -n otel-demo
+  776  kubectl edit deployment otelcol-b -n otel-demo -o yaml
+  777  kubectl edit deployment otelcol-c -n otel-demo -o yaml
+  778  kubectl -n otel-demo rollout restart deployment otelcol-c
+  779  kubectl -n otel-demo rollout restart deployment otelcol-b
+  780  kubectl get pods -n otel-demo -o wide
+  781  kubectl logs otelcol-c-6794dcfb87-vlr5l -n otel-demo > checklogsc
+  782  vim checklogsc
+  783  kubectl get pods -n otel-demo -o wide
+  784  cd /data/opentelemetry-collector-contrib/
+  785  ls
+  786  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  787  kubectl --namespace otel-demo port-forward svc/frontendproxy 8080:8080 --address localhost,9.59.150.225 
+  788  cd /data/opentelemetry-collector-contrib/
+  789  ls
+  790  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  791  conda activate aws
+  792  cd IT-Automation-Testbed-main/
+  793  kubectl get pods -n otel-demo -o wide
+  794  vim checklogsc
+  795  kubectl edit deployment loadgenerator -n otel-demo -o yaml
+  796  conda activate aws
+  797  cd IT-Automation-Testbed-main/
+  798  ls
+  799  cd ..
+  800  ls
+  801  vim hist_initial 
+  802  kubectl edit deployment otelcol-b -n otel-demo -o yaml
+  803  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  804  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  805  kubectl -n otel-demo rollout restart deployment otelcol-b
+  806  kubectl -n otel-demo rollout restart deployment otelcol-c
+  807  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  808  cd /data/opentelemetry-collector-contrib/
+  809  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  810  vim processor/tailsamplingprocessor/processor.go
+  811  kubectl --namespace otel-demo port-forward svc/frontendproxy 8080:8080 --address localhost,9.59.150.225 
+  812  conda activate aws
+  813  cd IT-Automation-Testbed-main/
+  814  kubectl get pods -n otel-demo -o wide
+  815  kubectl get configmap otelcol-c -n otel-demo
+  816  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  817  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  818  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  819  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  820  kubectl -n otel-demo rollout restart deployment otelcol-b
+  821  kubectl -n otel-demo rollout restart deployment otelcol-c
+  822  kubectl get pods -n otel-demo -o wide
+  823  kubectl logs otelcol-c-6996b6dd4d-lscng -n otel-demo > checklogsc
+  824  vim checklogsc
+  825  kubectl edit deployment loadgen -n otel-demo -o yaml
+  826  kubectl get deployments -n otel-demo
+  827  kubectl edit deployment loadgenerator -n otel-demo -o yaml
+  828  kubectl -n otel-demo rollout restart deployment loadgenerator
+  829  kubectl get pods -n otel-demo -o wide
+  830  kubectl logs otelcol-c-6996b6dd4d-lscng -n otel-demo > checklogsc
+  831  vim checklogsc
+  832  kubectl edit deployment loadgenerator -n otel-demo -o yaml
+  833  kubectl top 
+  834  kubectl top  pod -n otel-demo
+  835  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml 
+  836  vim https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+  837  kubectl top  pod -n otel-demo
+  838  kubectl get  pods -n kube-system -o wide
+  839  kubectl logs metrics-server-d5865ff47-mk5vf -n kube-system
+  840  kubectl get deployments -n kube-ssytem
+  841  kubectl get deployments -n kube-system
+  842  kubectl edit deployment metrics-server -n kube-system -o yaml
+  843  kubectl get  pods -n kube-system -o wide
+  844  watch kubectl get  pods -n kube-system -o wide
+  845  kubectl top  pod -n otel-demo
+  846  kubectl get  pods -n kube-system -o wide
+  847  kubectl get pods -n otel-demo -o wide
+  848  kubectl top  pod -n otel-demo
+  849  watch kubectl top  pod -n otel-demo
+  850  vim checklogsc
+  851  conda activate aws
+  852  cd IT-Automation-Testbed-main/
+  853  vim checklogsc
+  854  make uninstall_opentelemetry_astronomy_shop
+  855  make install_opentelemetry_astronomy_shop
+  856  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_b.yaml 
+  857  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  858  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  859  kubectl get po ds -n otel-demo -o wide
+  860  kubectl get pods -n otel-demo -o wide
+  861  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  862  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  863  kubectl edit deployment otelcol-b -n otel-demo -o yaml
+  864  kubectl edit deployment otelcol-c -n otel-demo -o yaml
+  865  kubectl -n otel-demo rollout restart deployment otelcol-b
+  866  kubectl -n otel-demo rollout restart deployment otelcol-c
+  867  kubectl get pods -n otel-demo -o wide
+  868  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  869  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  870  kubectl edit deployment otelcol-b -n otel-demo -o yaml
+  871  kubectl get pods -n otel-demo -o wide
+  872  kubectl logs otelcol-c-6797d9d496-5f2qc -n otel-demo > checklogsc
+  873  vim checklogsc
+  874  kubectl logs otelcol-c-6797d9d496-5f2qc -n otel-demo > checklogsc
+  875  vim checklogsc
+  876  exit
+  877  cd /data/opentelemetry-collector-contrib/
+  878  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  879  make otelcontribcol
+  880  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  881  make otelcontribcol
+  882  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  883  make otelcontribcol
+  884  vim Dockerfile
+  885  ls -lrt bin/
+  886  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  887  ls -lrt
+  888  docker build -t dhanyarmathews/otelcontribcol:latest .
+  889  docker push dhanyarmathews/otelcontribcol:latest
+  890  exit
+  891  conda activatw aws
+  892  conda activate aws
+  893  cd IT-Automation-Testbed-main/
+  894  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values.yaml
+  895  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_new.yaml 
+  896  vim roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values_with_logging.yaml 
+  897  kubectl --namespace otel-demo port-forward svc/frontendproxy 8080:8080 --address localhost,9.59.150.225 
+  898  cd /data/opentelemetry-collector-contrib/
+  899  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  900  make otelcontribcol
+  901  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  902  make otelcontribcol
+  903  cp bin/otelcontribcol_linux_amd64 otelcontribcol
+  904  ls -lrt
+  905  docker build -t dhanyarmathews/otelcontribcol:latest .
+  906  docker push dhanyarmathews/otelcontribcol:latest
+  907  ifconfig
+  908  cat /etc/hosts 
+  909  cat /etc/hostname 
+  910  cat /etc/host.conf 
+  911  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  912  conda activate aws
+  913  cd IT-Automation-Testbed-main/
+  914  kubectl get pods -n otel-demo -o wide
+  915  kubectl get pods --all-namespaces | grep jaeger
+  916  kubectl get svc --all-namespaces | grep jaeger
+  917  kubectl --namespace otel-demo port-forward svc/jaeger-query 8081:80 --address localhost,9.59.150.225 
+  918  kubectl --namespace jaeger port-forward svc/jaeger-query 8081:80 --address localhost,9.59.150.225 
+  919  kubectl --namespace jaeger port-forward svc/jaeger-query 8081:16685 --address localhost,9.59.150.225 
+  920  kubectl --namespace jaeger port-forward svc/jaeger-query 8081:80 --address localhost,9.59.150.225 
+  921  vim checklogsc
+  922  kubectl logs otelcol-c-6797d9d496-5f2qc -n otel-demo > checklogsc
+  923  vim checklogsc
+  924  kubectl logs otelcol-c-6797d9d496-5f2qc -n otel-demo > checklogsc
+  925  vim checklogsc
+  926  kubectl get pods --all-namespaces | grep jaeger
+  927  kubectl get pods -n otel-demo
+  928  kubectl get pods -n otel-demo -o wide
+  929  kubectl logs otelcol-c-6797d9d496-5f2qc -n otel-demo > checklogsc
+  930  vim checklogsc
+  931  kubectl logs otelcol-c-6797d9d496-5f2qc -n otel-demo > checklogsc
+  932  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  933  kubectl get pods -n otel-demo
+  934  kubectl -n otel-demo rollout restart deployment otelcol-c
+  935  kubectl get pods -n otel-demo
+  936  kubectl logs otelcol-c-6c7568d9f6-zcbt8 -n otel-demo > checklogsc1
+  937  vim checklogsc1
+  938  make uninstall_opentelemetry_astronomy_shop
+  939  make install_opentelemetry_astronomy_shop
+  940  helm upgrade --install otelcol-c open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-c.yaml -n otel-demo
+  941  helm upgrade --install otelcol-b open-telemetry/opentelemetry-collector -f  roles/sample_applications/opentelemetry-helm-charts/charts/opentelemetry-demo/values-b.yaml -n otel-demo
+  942  kubectl get pods -n otel-demo -o wide
+  943  kubectl edit deployment otelcol-c -n otel-demo -o yaml
+  944  kubectl edit deployment otelcol-b -n otel-demo -o yaml
+  945  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  946  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  947  kubectl edit deployment loadgenerator -n otel-demo -o yaml
+  948  kubectl -n otel-demo rollout restart deployment otelcol-c
+  949  kubectl -n otel-demo rollout restart deployment otelcol-b
+  950  kubectl -n otel-demo rollout restart deployment loadgenerator
+  951  kubectl get pods -n otel-demo -o wide
+  952  kubectl logs otelcol-c-6698c8cc6f-4k7c7 -n otel-demo > checklogsc2
+  953  vim checklogsc2 
+  954  kubectl logs otelcol-c-6698c8cc6f-4k7c7 -n otel-demo > checklogsc2
+  955  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml 
+  956  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml 
+  957  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+  958  kubectl get pods -n kube-system
+  959  kubectl edit deployment metrics-server -n kube-system -o yaml
+  960  kubectl get pods -n kube-system
+  961  kubectl top
+  962  kubectl top pod -n otel-demo | grep otel
+  963  kubectl get pods -n otel-demo -o wide
+  964  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  965  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  966  kubectl -n otel-demo rollout restart deployment otelcol-c
+  967  kubectl -n otel-demo rollout restart deployment otelcol-b
+  968  kubectl top pod -n otel-demo | grep otel
+  969  kubectl top pod -n otel-demo
+  970  exit
+  971  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  972  exit
+  973  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  974  conda activate aws
+  975  cd IT-Automation-Testbed-main/
+  976  kubectl top pod -n otel-demo
+  977  kubectl get pods --all-namespaces | grep grafana
+  978  kubectl get svc --all-namespaces | grep grafana
+  979  kubectl port-forward svc/prometheus-grafana -n prometheus --address localhost,9.59.150.225  8081:80
+  980  conda activate aws
+  981  cd IT-Automation-Testbed-main/
+  982  kubectl top pod -n otel-demo
+  983  kubectl edit deployment otelcol-b -n otel-demo -o yaml
+  984  kubectl edit configmap otelcol-b -n otel-demo -o yaml
+  985  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  986  kubectl -n otel-demo rollout restart deployment otelcol-b
+  987  kubectl -n otel-demo rollout restart deployment otelcol-c
+  988  kubectl get pods --all-namespaces | grep grafana
+  989  kubectl get pods -n otel-demo
+  990  exit
+  991  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  992  exit
+  993  cd /data/opentelemetry-collector-contrib/
+  994  vim processor/tailsamplingprocessor/internal/sampling/stratified_probabilistic.go 
+  995  kubectl port-forward svc/prometheus-operated -n prometheus --address localhost,9.59.150.225  9090:9090
+  996  conda activate aws
+  997  cd IT-Automation-Testbed-main/
+  998  kubectl edit configmap otelcol-c -n otel-demo -o yaml
+  999  kubectl get configmap -o otel-demo
+ 1000  kubectl get configmap -n otel-demo
+ 1001  cd /data/opentelemetry-collector-contrib/
+ 1002  ls
+ 1003  cd ..
+ 1004  ls
+ 1005  cp -R opentelemetry-collector-contrib/ opentelemetry-collector-contrib-span
+ 1006  ls
+ 1007  cd opentelemetry-collector-contrib-span/
+ 1008  ls
+ 1009  cd processor/
+ 1010  ls
+ 1011  cp -R tailsamplingprocessor/ spanintentprocessor
+ 1012  ls 
+ 1013  cd span
+ 1014  cd spanintentprocessor/
+ 1015  ls
+ 1016  vim and_helper
+ 1017  vim and_helper.go 
+ 1018  rm and_helper.go and_helper_test.go
+ 1019  ls
+ 1020  rm composite_helper.go composite_helper_test.g
+ 1021  rm composite_helper.go composite_helper_test.go
+ 1022  ls
+ 1023  rm drop_helper.go drop_helper_test.go
+ 1024  ls
+ 1025  vim generated_component_test.go
+ 1026  rm generated_component_test.go generated_package_test.go
+ 1027  ls
+ 1028  vim config_test.go
+ 1029  vim config.go
+ 1030  vim factory.go 
+ 1031  vim factory_test.go 
+ 1032  vim fuzz_test.go 
+ 1033  rm fuzz_test.go 
+ 1034  pwd
+ 1035  ls ../../
+ 1036  history 10000>hist
+ 1037  history n 10000>hist
+ 1038  history -n 10000>hist
+ 1039  history -n 10000 > hist
+ 1040  vim hist
+ 1041  history 10000 > hist

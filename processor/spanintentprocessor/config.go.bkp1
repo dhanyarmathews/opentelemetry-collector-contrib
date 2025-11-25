@@ -1,0 +1,53 @@
+package spanintentprocessor
+
+import (
+	"fmt"
+	"time"
+	//"go.opentelemetry.io/collector/config"
+)
+
+type Config struct {
+	//config.ProcessorSettings `mapstructure:",squash"`
+	SamplingPercentage       float64       `mapstructure:"sampling_percentage"` // between 0 and 1
+	SamplingBias             BiasConfig    `mapstructure:"sampling_bias"`
+	TickInterval             time.Duration `mapstructure:"tick_interval"` // flush interval
+	SampledTracesCacheSize   int           `mapstructure:"lru_sample_cache_size"`
+	UnsampledTracesCacheSize int           `mapstructure:"lru_unsample_cache_size"`
+
+	DecisionWait       time.Duration `mapstructure:"decision_wait"`
+    	NumTraces          int           `mapstructure:"num_traces"`
+    	SampleOnFirstMatch bool          `mapstructure:"sample_on_first_match"`
+	Options []Option
+}
+
+type BiasConfig struct {
+	Normal   float64 `mapstructure:"normal"`   // ≤1
+	Degraded float64 `mapstructure:"degraded"` // ≤1
+	Failed   float64 `mapstructure:"failed"`   // ≤1
+}
+
+func (cfg *Config) Validate() error {
+	if cfg.SamplingPercentage < 0 || cfg.SamplingPercentage > 1 {
+		return fmt.Errorf("sampling_percentage must be between 0 and 1")
+	}
+	if cfg.SamplingBias.Normal < 0 || cfg.SamplingBias.Normal > 1 {
+		return fmt.Errorf("bias.normal must be between 0 and 1")
+	}
+	if cfg.SamplingBias.Degraded < 0 || cfg.SamplingBias.Degraded > 1 {
+		return fmt.Errorf("bias.degraded must be between 0 and 1")
+	}
+	if cfg.SamplingBias.Failed < 0 || cfg.SamplingBias.Failed > 1 {
+		return fmt.Errorf("bias.failed must be between 0 and 1")
+	}
+	if cfg.TickInterval <= 0 {
+		return fmt.Errorf("tick_interval must be > 0")
+	}
+	if cfg.SampledTracesCacheSize <= 0 {
+		return fmt.Errorf("lru_sample_cache_size must be > 0")
+	}
+	if cfg.UnsampledTracesCacheSize <= 0 {
+		return fmt.Errorf("lru_unsample_cache_size must be > 0")
+	}
+	return nil
+}
+
