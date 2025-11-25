@@ -155,7 +155,7 @@ func newSpanIntentProcessor(
 		tdigestMap:      make(map[string]*utility.TDigest),
 		modelTDigestMap: make(map[string]*decayingTDigest),
                 quantileEMAMap:  make(map[string]*quantileEMA),
-                emaAlpha:        0.1, // smoothing factor: adjust as needed
+                emaAlpha:        0.8, // smoothing factor: adjust as needed
 		sampledTraces:   sampledCache,
 		unsampledTraces: unsampledCache,
 		stopCh:          make(chan struct{}),
