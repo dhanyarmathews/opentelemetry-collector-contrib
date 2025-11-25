@@ -57,6 +57,7 @@ extensions:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/googlecloudlogentryencodingextension v0.140.1
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.140.1
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/cgroupruntimeextension v0.140.1
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/tailsampling/stratifiedprobabilisticsamplerextension v0.1.0
 
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.140.0
@@ -279,4 +280,6 @@ providers:
 # When using `make genotelcontribcol`, the `replaces` content is appended to this
 # file before passing it to OCB, to ensure that local versions are used for all
 # Contrib modules.
+# #extension/tailsampling/stratifiedprobabilisticsamplerextension/
 replaces:
+  - github.com/open-telemetry/opentelemetry-collector-contrib/extension/tailsampling/stratifiedprobabilisticsamplerextension => ../../extension/tailsampling/stratifiedprobabilisticsamplerextension

@@ -1,0 +1,45 @@
+package stratifiedprobabilisticsamplerextension
+
+import (
+
+	"fmt"
+
+	"go.opentelemetry.io/collector/component"
+)
+
+type StratifiedProbabilisticCfg struct {
+    // SamplingPercentage is the percentage rate at which traces are going to be sampled.
+    // Defaults to zero (no sampling).
+    SamplingPercentage float64 `mapstructure:"sampling_percentage"`
+}
+
+type Config struct {
+    //component.Settings `mapstructure:",squash"`
+    // component.ExtensionSettings `mapstructure:",squash"`
+    Name string `mapstructure:"name"`
+    StratifiedCfg StratifiedProbabilisticCfg `mapstructure:"stratified"`
+    SamplingPercentage float64 `mapstructure:"sampling_percentage"`
+}
+
+func (c *Config) Validate() error {
+    // Validation for SamplingPercentage:
+    if c.SamplingPercentage < 0 {
+	    return fmt.Errorf("sampling_percentage cannot be negative")
+    }
+    return nil
+}
+
+// The default configuration for this extension.
+/*func createDefaultConfig() component.Config {
+    return &Config{
+        StratifiedCfg: StratifiedProbabilisticCfg{
+            SamplingPercentage: 0.0,
+        },
+    }
+}*/
+
+func createDefaultConfig() component.Config {
+    return &Config{
+            SamplingPercentage: 0.0,
+    }
+}

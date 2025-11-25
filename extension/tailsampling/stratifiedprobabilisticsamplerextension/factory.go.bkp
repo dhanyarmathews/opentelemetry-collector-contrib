@@ -1,0 +1,109 @@
+package stratifiedprobabilisticsamplerextension
+
+import (
+	"context"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/extension"
+	"log"
+)
+
+const (
+	// PolicyTypeStr is the YAML key used under tailsampling -> policies
+	PolicyTypeStr = "stratified_probabilistic_sampler"
+)
+
+// NewFactory registers this sampling policy with the tailsampling processor.
+/*func NewFactory() samplingpolicy.Factory {
+    return samplingpolicy.NewFactory(
+        PolicyTypeStr,
+        createDefaultConfig,
+        createEvaluator,
+    )
+}*/
+
+var (
+	// Define the metadata for your extension
+	//Type = component.NewType("stratified_probabilistic_sampler")
+	Type               component.Type
+	ExtensionStability = component.StabilityLevelAlpha
+)
+
+/*type StratifiedPolicy struct {
+    evaluator *StratifiedProbabilisticEvaluator
+    logger    *zap.Logger
+}
+
+func (p *StratifiedPolicy) Evaluate(
+    ctx context.Context,
+    traceID pcommon.TraceID,
+    traceData *samplingpolicy.TraceData,
+) (samplingpolicy.Decision, error) {
+    return p.evaluator.Evaluate(ctx, traceID, traceData)
+}
+
+// Factory that creates a Policy from a policyName and config
+func NewStratifiedPolicyFactory(ext *StratifiedProbabilisticExtension) samplingpolicy.PolicyFactory {
+    return func(policyName string, cfg map[string]any, logger *zap.Logger) samplingpolicy.Policy {
+        evaluator := ext.NewEvaluator(policyName, cfg)
+        return &StratifiedPolicy{
+            evaluator: evaluator.(*StratifiedProbabilisticEvaluator),
+            logger:    logger,
+        }
+    }
+}*/
+
+func init() {
+	// Initialize Type with component.NewType, handle error
+	var err error
+	Type, err = component.NewType(PolicyTypeStr)
+	if err != nil {
+		log.Fatalf("Failed to create component type: %v", err)
+	}
+
+	// You can also define the stability level here as needed
+	ExtensionStability = component.StabilityLevelAlpha
+	// Register the policy factory for tail-sampling processor
+	// ext := &StratifiedProbabilisticExtension{} // default instance
+	//samplingpolicy.RegisterPolicy(PolicyTypeStr, NewStratifiedPolicyFactory(ext))
+}
+
+func NewFactory() extension.Factory {
+	return extension.NewFactory(
+		Type,
+		createDefaultConfig,
+		createExtension,
+		ExtensionStability,
+	)
+}
+
+/*func createDefaultConfig() component.Config {
+	return &Config{}
+}*/
+
+func createExtension(_ context.Context, settings extension.Settings, cfg component.Config) (extension.Extension, error) {
+	eCfg := cfg.(*Config)
+	extensionInstance, err := NewExtension(settings, eCfg)
+
+	// If there is an error, return the error
+	if err != nil {
+		return nil, err
+	}
+
+	// Otherwise, return the extension instance
+	return extensionInstance, nil
+	//return NewStratifiedProbabilisticExtension(settings, eCfg), nil
+}
+
+// createEvaluator builds the policy evaluator using your custom constructor.
+/*func createEvaluator(
+	settings component.TelemetrySettings,
+	cfg samplingpolicy.Config,
+) (samplingpolicy.Evaluator, error) {
+
+	c := cfg.(*Config)
+
+	return NewStratifiedProbabilisticExtension(
+		settings,
+		c.StratifiedCfg.SamplingPercentage,
+	), nil
+}*/
