@@ -43,7 +43,7 @@ func NewProbabilisticSampler(settings component.TelemetrySettings, hashSalt stri
 
 // Evaluate looks at the trace data and returns a corresponding SamplingDecision.
 func (s *probabilisticSampler) Evaluate(_ context.Context, traceID pcommon.TraceID, _ *TraceData) (Decision, error) {
-	s.logger.Debug("Evaluating spans in probabilistic filter")
+	s.logger.Debug("[CHECK]:Evaluating spans in probabilistic filter")
 
 	if hashTraceID(s.hashSalt, traceID[:]) <= s.threshold {
 		return Sampled, nil

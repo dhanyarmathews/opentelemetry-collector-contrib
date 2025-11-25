@@ -144,6 +144,32 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 	)
 	errs = errors.Join(errs, err)
 
+	builder.ProcessorTailSamplingPerPolicyDecisionCount, err = builder.meter.Int64Counter(
+                "otelcol_processor_tail_sampling_count_per_policy_decision",
+                metric.WithDescription("Count of traces sampled per policy"),
+                metric.WithUnit("{traces}"),
+        )
+        errs = errors.Join(errs, err)
+	builder.ProcessorTailSamplingPerPolicyDecisionLatency, err = builder.meter.Int64Histogram(
+                "otelcol_processor_tail_sampling_per_policy_decision_latency",
+                metric.WithDescription("Time for sampling decision per policy"),
+                metric.WithUnit("s"),
+        )
+        errs = errors.Join(errs, err)
+
+	builder.ProcessorTailSamplingTracesSampledByPolicy, err = builder.meter.Int64Counter(
+                "otelcol_processor_tail_sampling_count_traces_sampled_by_policy",
+                metric.WithDescription("Count of traces that were sampled by each policy"),
+                metric.WithUnit("{traces}"),
+        )
+        errs = errors.Join(errs, err)
+
+	builder.ProcessorTailSamplingPolicyMemoryUsage, err = builder.meter.Int64Histogram(
+                "otelcol_processor_tail_sampling_policy_memory_usage_bytes",
+                metric.WithDescription("Memory usage per sampling policy"),
+                metric.WithUnit("By"),
+        )
+        errs = errors.Join(errs, err)
 
 	return &builder, errs
 }

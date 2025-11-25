@@ -1,0 +1,29 @@
+# Stage 1: Build
+FROM golang:1.23 AS builder
+
+ENV CGO_ENABLED=0 \
+    GO111MODULE=on \
+    PATH=$PATH:/go/bin
+
+WORKDIR /otelcontrib
+
+COPY . .
+
+# Download dependencies
+RUN go mod download
+
+# Build the collector
+RUN make otelcontribcol || (echo "Build failed" && exit 1)
+
+# Check output file
+RUN ls -alh /otelcontrib/bin
+
+# Stage 2: Runtime
+FROM gcr.io/distroless/static:nonroot
+
+# ✅ Ensure binary path is correct — modify here if needed
+COPY --from=builder /otelcontrib/bin/otelcontribcol /otelcontribcol
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/otelcontribcol"]

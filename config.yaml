@@ -1,0 +1,23 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+exporters:
+  logging:
+    logLevel: debug
+
+processors:
+  batch:
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888  # Telemetry endpoint address for collector metrics
+
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
