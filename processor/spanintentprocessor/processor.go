@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"strconv"
@@ -286,110 +287,13 @@ func (p *spanIntentProcessor) processTraces(ctx context.Context, td ptrace.Trace
 	return td, nil
 }
 
-/*func (p *spanIntentProcessor) processTracesForSampling(normalSet map[pcommon.TraceID]struct{}, degradedSet map[pcommon.TraceID]struct{}, failedSet map[pcommon.TraceID]struct{}, tracesToProcess map[pcommon.TraceID]*traceData) {
-	p.logger.Info("Entering processTracesForSampling")
-	// Remove duplicates: traces in failed should not be in normal or degraded sets.
-	for tid := range failedSet {
-		delete(normalSet, tid)
-		delete(degradedSet, tid)
-	}
-	for tid := range degradedSet {
-		delete(normalSet, tid)
-	}
-
-	// Export metrics for normal, degraded, and failed traces
-	p.logger.Info("Inside processTraces adding metrics")
-	p.mTracesClassifiedTotal.Add(context.Background(), int64(len(normalSet)), metric.WithAttributes(attribute.String("classification_category", "normal")))
-	p.mTracesClassifiedTotal.Add(context.Background(), int64(len(degradedSet)), metric.WithAttributes(attribute.String("classification_category", "degraded")))
-	p.mTracesClassifiedTotal.Add(context.Background(), int64(len(failedSet)), metric.WithAttributes(attribute.String("classification_category", "failed")))
-
-	type category int
-        const (
-                Normal category = iota
-                Degraded
-                Failed
-        )
-
-	// Now, we need to group traces by their trace graph hash.
-	catTraceHashes := map[category]map[string]pcommon.TraceID{
-		Normal:   {}, Degraded: {},Failed:   {},
-	}
-	for tid := range normalSet {
-		data := tracesToProcess[tid]
-		hash, err := p.getTraceGraphHash(data)
-		if err != nil {
-			p.logger.Warn("failed to get trace graph hash", zap.Error(err))
-			p.mErrorsTotal.Add(context.Background(), 1, metric.WithAttributes(attribute.String("error_type", "hash_generation_failed")))
-			continue
-		}
-		catTraceHashes[Normal][hash] = tid
-	}
-	for tid := range degradedSet {
-		data := tracesToProcess[tid]
-		hash, err := p.getTraceGraphHash(data)
-		if err != nil {
-			p.logger.Warn("failed to get trace graph hash", zap.Error(err))
-			p.mErrorsTotal.Add(context.Background(), 1, metric.WithAttributes(attribute.String("error_type", "hash_generation_failed")))
-			continue
-		}
-		catTraceHashes[Degraded][hash] = tid
-	}
-	for tid := range failedSet {
-		data := tracesToProcess[tid]
-		hash, err := p.getTraceGraphHash(data)
-		if err != nil {
-			p.logger.Warn("failed to get trace graph hash", zap.Error(err))
-			p.mErrorsTotal.Add(context.Background(), 1, metric.WithAttributes(attribute.String("error_type", "hash_generation_failed")))
-			continue
-		}
-		catTraceHashes[Failed][hash] = tid
-	}
-
-	// Apply the final sampling based on the sampling bias and weight of each trace group
-	for cat, traceHashToID := range catTraceHashes {
-		var bias float64
-		label := ""
-		switch cat {
-		case Normal:
-			bias = p.cfg.SamplingBias.Normal
-			label = "normal"
-		case Degraded:
-			bias = p.cfg.SamplingBias.Degraded
-			label = "degraded"
-		case Failed:
-			bias = p.cfg.SamplingBias.Failed
-			label = "failed"
-		}
-
-		finalSamplingRate := p.cfg.SamplingPercentage * bias
-		for hash, tid := range traceHashToID {
-			start := time.Now()
-			hasher := fnv.New64a()
-			_, _ = hasher.Write([]byte(defaultHashSalt))
-			_, _ = hasher.Write([]byte(hash))
-			hashedValue := hasher.Sum64()
-			threshold := uint64(finalSamplingRate * float64(^uint64(0)))
-			if hashedValue <= threshold {
-				p.sampledTraces.Put(tid, true)
-				p.mTracesSampled.Add(context.Background(), 1, metric.WithAttributes(attribute.String("sampling_category", label)))
-				//p.forwardTrace(tid, traceSpansMap[tid].spans)
-				p.forwardTrace(tid, tracesToProcess[tid].spans, tracesToProcess[tid].resourceAttrs)
-			} else {
-				p.unsampledTraces.Put(tid, true)
-				p.mTracesUnsampled.Add(context.Background(), 1, metric.WithAttributes(attribute.String("sampling_category", label)))
-			}
-			p.mSamplingDecisionLatency.Record(context.Background(), time.Since(start).Microseconds())
-		}
-	}
-}*/
-
 func (p *spanIntentProcessor) processTracesForSampling(
 	normalSet, degradedSet, failedSet map[pcommon.TraceID]struct{},
 	tracesToProcess map[pcommon.TraceID]*traceData,
 ) {
 	p.logger.Info("Entering processTracesForSampling")
 
-	// Deduplicate traces among categories (failed > degraded > normal)
+	// Deduplicate traces (priority: failed > degraded > normal)
 	for tid := range failedSet {
 		delete(normalSet, tid)
 		delete(degradedSet, tid)
@@ -398,163 +302,114 @@ func (p *spanIntentProcessor) processTracesForSampling(
 		delete(normalSet, tid)
 	}
 
-	// Export classification counts metrics
+	// Record classification metrics
 	p.mTracesClassifiedTotal.Add(context.Background(), int64(len(normalSet)), metric.WithAttributes(attribute.String("classification_category", "normal")))
 	p.mTracesClassifiedTotal.Add(context.Background(), int64(len(degradedSet)), metric.WithAttributes(attribute.String("classification_category", "degraded")))
 	p.mTracesClassifiedTotal.Add(context.Background(), int64(len(failedSet)), metric.WithAttributes(attribute.String("classification_category", "failed")))
 
-	type category int
-	const (
-		Normal category = iota
-		Degraded
-		Failed
-	)
+	// Convert sets to slices
+	normalTraces := setToSlice(normalSet)
+	degradedTraces := setToSlice(degradedSet)
+	failedTraces := setToSlice(failedSet)
 
-	// Group traces by DAG hash for each category
-	catTraceHashes := map[category]map[string][]pcommon.TraceID{
-		Normal:   {},
-		Degraded: {},
-		Failed:   {},
-	}
-	for tid := range normalSet {
-		data := tracesToProcess[tid]
-		hash, err := p.getTraceGraphHash(data)
-		if err != nil {
-			p.logger.Warn("failed to get trace graph hash", zap.Error(err))
-			p.mErrorsTotal.Add(context.Background(), 1, metric.WithAttributes(attribute.String("error_type", "hash_generation_failed")))
-			continue
-		}
-		catTraceHashes[Normal][hash] = append(catTraceHashes[Normal][hash], tid)
-	}
-	for tid := range degradedSet {
-		data := tracesToProcess[tid]
-		hash, err := p.getTraceGraphHash(data)
-		if err != nil {
-			p.logger.Warn("failed to get trace graph hash", zap.Error(err))
-			p.mErrorsTotal.Add(context.Background(), 1, metric.WithAttributes(attribute.String("error_type", "hash_generation_failed")))
-			continue
-		}
-		catTraceHashes[Degraded][hash] = append(catTraceHashes[Degraded][hash], tid)
-	}
-	for tid := range failedSet {
-		data := tracesToProcess[tid]
-		hash, err := p.getTraceGraphHash(data)
-		if err != nil {
-			p.logger.Warn("failed to get trace graph hash", zap.Error(err))
-			p.mErrorsTotal.Add(context.Background(), 1, metric.WithAttributes(attribute.String("error_type", "hash_generation_failed")))
-			continue
-		}
-		catTraceHashes[Failed][hash] = append(catTraceHashes[Failed][hash], tid)
+	traceGroups := map[string][]pcommon.TraceID{
+		"normal":   normalTraces,
+		"degraded": degradedTraces,
+		"failed":   failedTraces,
 	}
 
-	categoryLabel := func(cat category) string {
-		switch cat {
-		case Normal:
-			return "normal"
-		case Degraded:
-			return "degraded"
-		case Failed:
-			return "failed"
-		default:
-			return "unknown"
+	biasMap := map[string]float64{
+		"normal":   p.cfg.SamplingBias.Normal,
+		"degraded": p.cfg.SamplingBias.Degraded,
+		"failed":   p.cfg.SamplingBias.Failed,
+	}
+
+	totalTraces := len(normalTraces) + len(degradedTraces) + len(failedTraces)
+	if totalTraces == 0 {
+		return
+	}
+
+	// Calculate total budget
+	totalBudget := int(float64(totalTraces) * p.cfg.SamplingPercentage)
+	if totalBudget == 0 {
+		totalBudget = 1 // Always sample at least one trace if any exist
+	}
+
+	// Step 1: Pre-allocate to bias==1 groups
+	allocated := make(map[string]int)
+	remainingBudget := totalBudget
+	remainingBias := 0.0
+
+	for label, traces := range traceGroups {
+		if biasMap[label] == 1 {
+			allocated[label] = len(traces) // sample all
+			remainingBudget -= len(traces)
+		} else {
+			remainingBias += biasMap[label]
 		}
 	}
 
-	// Pre-store biases in a map for easy lookup
-	biasMap := map[category]float64{
-		Normal:   p.cfg.SamplingBias.Normal,
-		Degraded: p.cfg.SamplingBias.Degraded,
-		Failed:   p.cfg.SamplingBias.Failed,
-	}
-
-	// For each DAG hash found in any category, do the sampling
-	// Collect all unique hashes from all categories
-	hashSet := make(map[string]struct{})
-	for cat := range catTraceHashes {
-		for hash := range catTraceHashes[cat] {
-			hashSet[hash] = struct{}{}
+	// Step 2: Proportional allocation of remaining budget
+	for label, traces := range traceGroups {
+		if biasMap[label] < 1 {
+			alloc := int((biasMap[label] / remainingBias) * float64(remainingBudget))
+			if alloc > len(traces) {
+				alloc = len(traces)
+			}
+			allocated[label] = alloc
 		}
 	}
 
-	for hash := range hashSet {
-		// Collect trace slices per category, default to empty if none
-		traceGroups := map[category][]pcommon.TraceID{
-			Normal:   catTraceHashes[Normal][hash],
-			Degraded: catTraceHashes[Degraded][hash],
-			Failed:   catTraceHashes[Failed][hash],
-		}
-
-		// Calculate total number of traces across categories for this hash
-		totalTraces := 0
-		for _, traces := range traceGroups {
-			totalTraces += len(traces)
-		}
-		if totalTraces == 0 {
+	// Step 3: Sample top-N traces deterministically using traceID score
+	for label, traces := range traceGroups {
+		budget := allocated[label]
+		if len(traces) == 0 {
 			continue
 		}
 
-		// Calculate sum of biases only for categories present (with non-empty trace slices)
-		var sumBias float64
-		for cat, traces := range traceGroups {
-			if len(traces) > 0 {
-				sumBias += biasMap[cat]
-			}
+		// Score each trace using last 8 bytes of TraceID
+		type scoredTrace struct {
+			tid   pcommon.TraceID
+			score float64
 		}
-		if sumBias == 0 {
-			// Avoid division by zero, skip if no biases
-			continue
-		}
-
-		// Total sampling budget for this hash (all categories combined)
-		totalBudget := int(float64(totalTraces) * p.cfg.SamplingPercentage)
-		if totalBudget == 0 {
-			totalBudget = 1 // At least one sample if any traces exist
+		var scored []scoredTrace
+		for _, tid := range traces {
+			score := traceIDScore(tid)
+			scored = append(scored, scoredTrace{tid: tid, score: score})
 		}
 
-		//start := time.Now()
+		// Sort deterministically by score (lowest = highest priority)
+		sort.Slice(scored, func(i, j int) bool {
+			return scored[i].score < scored[j].score
+		})
 
-		// For each category, allocate budget proportionally by bias share, select top-variance traces
-		for cat, traces := range traceGroups {
-			label := categoryLabel(cat)
-			if len(traces) == 0 {
-				continue
-			}
-
-			budget := int(float64(totalBudget) * (biasMap[cat] / sumBias))
-			if budget > len(traces) {
-				budget = len(traces)
-			}
-
-			type traceVariance struct {
-				tid      pcommon.TraceID
-				variance float64
-			}
-			var variances []traceVariance
-
-			for _, tid := range traces {
-				latencies := extractSpanLatencies(tracesToProcess[tid])
-				variance := calculateVariance(latencies)
-				variances = append(variances, traceVariance{tid: tid, variance: variance})
-			}
-
-			sort.Slice(variances, func(i, j int) bool {
-				return variances[i].variance > variances[j].variance
-			})
-
-			for i, tv := range variances {
-				if i < budget {
-					p.sampledTraces.Put(tv.tid, true)
-					p.mTracesSampled.Add(context.Background(), 1, metric.WithAttributes(attribute.String("sampling_category", label)))
-					p.forwardTrace(tv.tid, tracesToProcess[tv.tid].spans, tracesToProcess[tv.tid].resourceAttrs)
-				} else {
-					p.unsampledTraces.Put(tv.tid, true)
-					p.mTracesUnsampled.Add(context.Background(), 1, metric.WithAttributes(attribute.String("sampling_category", label)))
-				}
+		// Sample up to budget
+		for i, st := range scored {
+			if i < budget {
+				p.sampledTraces.Put(st.tid, true)
+				p.mTracesSampled.Add(context.Background(), 1, metric.WithAttributes(attribute.String("sampling_category", label)))
+				p.forwardTrace(st.tid, tracesToProcess[st.tid].spans, tracesToProcess[st.tid].resourceAttrs)
+			} else {
+				p.unsampledTraces.Put(st.tid, true)
+				p.mTracesUnsampled.Add(context.Background(), 1, metric.WithAttributes(attribute.String("sampling_category", label)))
 			}
 		}
-
-		// p.mSamplingDecisionLatency.Record(context.Background(), time.Since(start).Microseconds())
 	}
+}
+
+// Converts a map[TraceID]struct{} to a slice of TraceIDs
+func setToSlice(set map[pcommon.TraceID]struct{}) []pcommon.TraceID {
+	slice := make([]pcommon.TraceID, 0, len(set))
+	for tid := range set {
+		slice = append(slice, tid)
+	}
+	return slice
+}
+
+// Deterministic score between 0 and 1 based on last 8 bytes of TraceID
+func traceIDScore(tid pcommon.TraceID) float64 {
+	low := binary.BigEndian.Uint64(tid[8:])
+	return float64(low) / float64(^uint64(0)) // normalize to [0,1)
 }
 
 func extractSpanLatencies(td *traceData) []float64 {
